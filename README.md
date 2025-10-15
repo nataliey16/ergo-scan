@@ -1,6 +1,6 @@
 # ErgoScan
 
-ErgoScan is a posture monitoring and movement detection tool built with **Python**, **MediaPipe**, and **OpenCV**.  
+ErgoScan is a posture monitoring and movement detection tool built with **Tkinter**, **Python**, **MediaPipe**, and **OpenCV**.  
 It detects full-body landmarks (pose, hands, and face) in real time using your webcam, helping users become more aware of their posture and movement habits.
 
 ---
