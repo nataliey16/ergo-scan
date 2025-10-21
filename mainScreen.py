@@ -10,15 +10,15 @@ class MainScreen:
         self.root.title("ErgoScan - Main Screen") #title
         self.root.geometry("1200x800") #resolution of window
         self.root.configure(bg="#f0f0f0") #background color
-        
+    
         # Initialize webcam variables
         self.cap = None
         self.webcam_active = False
+        self.calibrated = False  #state variable to track if calibration has been done or not
         
         # Calling setup functions to initialize UI and webcam
         self.setup_ui()
         self.start_webcam_preview()
-        
 
     # --- Function that sets up the UI (split into left and right sections) ---
     def setup_ui(self):
@@ -42,7 +42,9 @@ class MainScreen:
 
         #Right Section - Webcam Display
         self.setup_right_section()
-        
+
+
+    # ---------- LEFT SECTION BELOW ----------
 
     # --- Modular function that builds the left side of the screen ---
     def setup_left_section(self):
@@ -122,8 +124,90 @@ class MainScreen:
                                 width=20, height=2, command=self.save_form,
                                 relief="raised", bd=2)
         submit_button.grid(row=len(fields), column=0, columnspan=2, pady=20)
+
+    def setup_form(self):
+        """Set up the form in the right section"""
+        # Form frame
+        form_frame = tk.Frame(self.right_frame, bg="#ffffff", relief="groove", bd=2)
+        form_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        form_frame.grid_columnconfigure(1, weight=1)
         
+        # Form fields
+        fields = [
+            ("Name:", "name"),
+            ("Age:", "age"),
+            ("Height (cm):", "height"),
+            ("Weight (kg):", "weight"),
+            ("Occupation:", "occupation"),
+            ("Workspace Type:", "workspace")
+        ]
+        
+        self.form_vars = {}
+        
+        for i, (label_text, var_name) in enumerate(fields):
+            # Label
+            label = tk.Label(form_frame, text=label_text, font=("Arial", 12),
+                           bg="#ffffff", anchor="w")
+            label.grid(row=i, column=0, sticky="w", padx=10, pady=8)
+            
+            # Entry
+            self.form_vars[var_name] = tk.StringVar()
+            entry = tk.Entry(form_frame, textvariable=self.form_vars[var_name],
+                           font=("Arial", 12), width=25)
+            entry.grid(row=i, column=1, sticky="ew", padx=10, pady=8)
+        
+        # Buttons frame
+        buttons_frame = tk.Frame(form_frame, bg="#ffffff")
+        buttons_frame.grid(row=len(fields), column=0, columnspan=2, pady=20)
+        
+        # Save button
+        save_button = tk.Button(buttons_frame, text="Save Information",
+                               font=("Arial", 12, "bold"), bg="#2196F3", fg="white",
+                               width=15, height=1, command=self.save_form,
+                               relief="raised", bd=2)
+        save_button.pack(side="left", padx=10)
+        
+        # Clear button
+        clear_button = tk.Button(buttons_frame, text="Clear Form",
+                               font=("Arial", 12), bg="#f44336", fg="white",
+                               width=15, height=1, command=self.clear_form,
+                               relief="raised", bd=2)
+        clear_button.pack(side="left", padx=10)
     
+        
+    def open_settings(self):
+        """Handle settings button click"""
+        print("Opening settings page...")
+        # TODO: Implement navigation to settings page
+        tk.messagebox.showinfo("Settings", "Opening settings page...")
+        
+    def open_profile(self):
+        """Handle profile button click"""
+        print("Opening profile page...")
+        # TODO: Implement navigation to profile page
+        tk.messagebox.showinfo("Profile", "Opening profile page...")
+        
+    def save_form(self):
+        """Handle form save"""
+        print("Saving patient information...")
+        # TODO: Implement actual data saving logic
+        tk.messagebox.showinfo("Success", "Patient information saved successfully!")
+        
+    def clear_form(self):
+        """Clear all form fields"""
+        print("Clearing patient information form...")
+        # TODO: Implement form clearing logic
+        tk.messagebox.showinfo("Cleared", "Form cleared successfully!")
+        
+    def on_closing(self):
+        """Handle window closing"""
+        if self.cap:
+            self.cap.release()
+        self.root.destroy()
+
+        
+    # ---------- RIGHT SECTION BELOW ----------
+
     # --- Modular function that builds the right side of the screen ---
     def setup_right_section(self):
         # Configure the right frame layout and grid weight
@@ -194,8 +278,6 @@ class MainScreen:
         button_frame.grid(row=3, column=0, pady=(10, 20)) #define button frame grid placement
 
         # Start calibration button
-        self.calibrated = False  #state variable to track if calibration has been done or not
-
         self.calibration_button = tk.Button( #start calibration button details
             button_frame,
             text="Start Calibration",
@@ -226,58 +308,7 @@ class MainScreen:
         self.start_button.grid(row=2, column=0, pady=20) #start scanning button grid placement
         
 
-
-    def setup_form(self):
-        """Set up the form in the right section"""
-        # Form frame
-        form_frame = tk.Frame(self.right_frame, bg="#ffffff", relief="groove", bd=2)
-        form_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
-        form_frame.grid_columnconfigure(1, weight=1)
-        
-        # Form fields
-        fields = [
-            ("Name:", "name"),
-            ("Age:", "age"),
-            ("Height (cm):", "height"),
-            ("Weight (kg):", "weight"),
-            ("Occupation:", "occupation"),
-            ("Workspace Type:", "workspace")
-        ]
-        
-        self.form_vars = {}
-        
-        for i, (label_text, var_name) in enumerate(fields):
-            # Label
-            label = tk.Label(form_frame, text=label_text, font=("Arial", 12),
-                           bg="#ffffff", anchor="w")
-            label.grid(row=i, column=0, sticky="w", padx=10, pady=8)
-            
-            # Entry
-            self.form_vars[var_name] = tk.StringVar()
-            entry = tk.Entry(form_frame, textvariable=self.form_vars[var_name],
-                           font=("Arial", 12), width=25)
-            entry.grid(row=i, column=1, sticky="ew", padx=10, pady=8)
-        
-        # Buttons frame
-        buttons_frame = tk.Frame(form_frame, bg="#ffffff")
-        buttons_frame.grid(row=len(fields), column=0, columnspan=2, pady=20)
-        
-        # Save button
-        save_button = tk.Button(buttons_frame, text="Save Information",
-                               font=("Arial", 12, "bold"), bg="#2196F3", fg="white",
-                               width=15, height=1, command=self.save_form,
-                               relief="raised", bd=2)
-        save_button.pack(side="left", padx=10)
-        
-        # Clear button
-        clear_button = tk.Button(buttons_frame, text="Clear Form",
-                               font=("Arial", 12), bg="#f44336", fg="white",
-                               width=15, height=1, command=self.clear_form,
-                               relief="raised", bd=2)
-        clear_button.pack(side="left", padx=10)
-        
     def start_webcam_preview(self):
-        """Start the webcam preview"""
         try:
             self.cap = cv2.VideoCapture(0)
             if self.cap.isOpened():
@@ -314,36 +345,7 @@ class MainScreen:
         # TODO: Implement navigation to camera page
         # This could involve opening a new window or switching frames
         tk.messagebox.showinfo("Start Scanning", "Navigating to camera page...")
-        
-    def open_settings(self):
-        """Handle settings button click"""
-        print("Opening settings page...")
-        # TODO: Implement navigation to settings page
-        tk.messagebox.showinfo("Settings", "Opening settings page...")
-        
-    def open_profile(self):
-        """Handle profile button click"""
-        print("Opening profile page...")
-        # TODO: Implement navigation to profile page
-        tk.messagebox.showinfo("Profile", "Opening profile page...")
-        
-    def save_form(self):
-        """Handle form save"""
-        print("Saving patient information...")
-        # TODO: Implement actual data saving logic
-        tk.messagebox.showinfo("Success", "Patient information saved successfully!")
-        
-    def clear_form(self):
-        """Clear all form fields"""
-        print("Clearing patient information form...")
-        # TODO: Implement form clearing logic
-        tk.messagebox.showinfo("Cleared", "Form cleared successfully!")
-        
-    def on_closing(self):
-        """Handle window closing"""
-        if self.cap:
-            self.cap.release()
-        self.root.destroy()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
