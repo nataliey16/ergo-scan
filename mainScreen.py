@@ -14,6 +14,7 @@ class MainScreen:
         # Initialize webcam variables
         self.cap = None
         self.webcam_active = False
+        self.start_button = tk.Button(self.root, text="Start", state="disabled")
         self.calibrated = False  #state variable to track if calibration has been done or not
         
         # Calling setup functions to initialize UI and webcam
@@ -256,7 +257,7 @@ class MainScreen:
             fg="white",
             font=("Arial", 14)
         )
-        self.webcam_label.pack(expand=True, fill="both") #Enable automatic resizing for the label
+        self.webcam_label.grid(expand=True, fill="both") #Enable automatic resizing for the label
 
         # Webcam ON/OFF toggle switch & icon
         self.toggle_camera_button = tk.Button( #toggle camera button details
@@ -275,39 +276,51 @@ class MainScreen:
 
         # --- Start scanning/calibration buttons --- 
         button_frame = tk.Frame(self.right_frame, bg="#ffffff") #init button frame
-        button_frame.grid(row=3, column=0, pady=(10, 20)) #define button frame grid placement
-
-        # Start calibration button
-        self.calibration_button = tk.Button( #start calibration button details
-            button_frame,
-            text="Start Calibration",
-            font=("Arial", 14, "bold"),
-            bg="#2196F3",
-            fg="white",
-            width=20,
-            height=2,
-            command=self.start_calibration,
-            relief="raised",
-            bd=3
-        )
-        self.calibration_button.pack(pady=(0, 10)) #start calibration button grid placement
+        button_frame.pack(pady=(10, 20)) #define button frame grid placement
 
         # Start scanning button
         self.start_button = tk.Button( #start scanning button details
             self.right_frame, 
             text="Start Scanning",
-            font=("Arial", 14, "bold"), 
+            font=("Arial", 14), 
             bg="#4CAF50", 
             fg="white",
             width=20, 
             height=2, 
-            command = self.start_scanning,
+            command = self.start_scanning, #call function on click
             relief="raised", 
             bd=3
         )
-        self.start_button.grid(row=2, column=0, pady=20) #start scanning button grid placement
-        
+        self.start_button.pack(pady=20) #start scanning button grid placement
 
+        # Start calibration button
+        self.calibration_button = tk.Button( #start calibration button details
+            self.right_frame,
+            text="Start Calibration",
+            font=("Arial", 14),
+            bg="#2196F3",
+            fg="white",
+            width=20,
+            height=2,
+            command = self.start_calibration, # call function on click
+            relief="raised",
+            bd=3
+        )
+        self.calibration_button.pack(pady=(0, 10)) #start calibration button grid placement
+
+        
+    # --- Toggle webcam ON/OFF function ---
+    def toggle_camera(self):
+        if self.webcam_active:
+            self.webcam_active = False
+            self.toggle_camera_button.config(bg="#f44336")  #red when off
+        else:
+            self.webcam_active = True
+            self.toggle_camera_button.config(bg="#50ff36") # green when on
+            if not self.cap or not self.cap.isOpened():
+                self.start_webcam_preview()
+
+    # --- Start calibration & scanning functions ---
     def start_webcam_preview(self):
         try:
             self.cap = cv2.VideoCapture(0)
@@ -338,6 +351,14 @@ class MainScreen:
                 
             # Schedule next update
             self.root.after(30, self.update_webcam)
+
+    def stop_webcam(self):
+        pass
+
+
+    # --- Start calibration & scanning functions ---
+    def start_calibration(self):
+        pass
         
     def start_scanning(self):
         """Handle start scanning button click"""
