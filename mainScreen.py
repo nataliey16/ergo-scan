@@ -4,70 +4,85 @@ import cv2
 from PIL import Image, ImageTk
 
 class MainScreen:
+    # --- Initialize the main screen GUI ---
     def __init__(self, root):
         self.root = root
-        self.root.title("ErgoScan - Main Screen")
-        self.root.geometry("1200x800")
-        self.root.configure(bg="#f0f0f0")
-        
+        self.root.title("ErgoScan - Main Screen") #title
+        self.root.geometry("1200x800") #resolution of window
+        self.root.configure(bg="#f0f0f0") #background color
+    
         # Initialize webcam variables
         self.cap = None
         self.webcam_active = False
+        self.calibrated = False  #state variable to track if calibration has been done or not
         
+        # Calling setup functions to initialize UI and webcam
         self.setup_ui()
         self.start_webcam_preview()
-        
+
+    # --- Function that sets up the UI (split into left and right sections) ---
     def setup_ui(self):
-        """Set up the main user interface"""
-        # Configure grid weights for responsive design
-        self.root.grid_columnconfigure(0, weight=1)
-        self.root.grid_columnconfigure(1, weight=1)
+        # Configure the root layout grid and weight
+        self.root.grid_columnconfigure(0, weight=1) #configure column 0 for left section
+        self.root.grid_columnconfigure(1, weight=1) #configure column 1 for right section
         self.root.grid_rowconfigure(0, weight=1)
         
-        # Create left and right frames
+        # --- Creating Frames --- 
+        #Left section frame
         self.left_frame = tk.Frame(self.root, bg="#ffffff")
         self.left_frame.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
-        
+
+        #Right section frame
         self.right_frame = tk.Frame(self.root, bg="#ffffff")
         self.right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
         
-        # Left Section - Form and Icons
+        # --- Call set up functions for each section ---
+        #Left Section - Form and Icons
         self.setup_left_section()
-        
-        # Right Section - Webcam Display
+
+        #Right Section - Webcam Display
         self.setup_right_section()
-        
+
+
+    # ---------- LEFT SECTION BELOW ----------
+
+    # --- Modular function that builds the left side of the screen ---
     def setup_left_section(self):
-        """Set up the left section with form, settings, and profile"""
-        # Configure left frame grid
-        self.left_frame.grid_rowconfigure(1, weight=1)
-        self.left_frame.grid_columnconfigure(0, weight=1)
+        # Configure the left frame layout and grid weight
+        self.left_frame.grid_rowconfigure(0, weight=1)
+        self.left_frame.grid_columnconfigure(1, weight=1)
         
-        # Header with icons
-        header_frame = tk.Frame(self.left_frame, bg="#ffffff")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 0))
-        header_frame.grid_columnconfigure(1, weight=1)
+        # Left icons column
+        icons_frame = tk.Frame(self.left_frame, bg="#ffffff", width=60)
+        icons_frame.grid(row=0, column=0, sticky="ns", padx=(10, 5), pady=10)
+        icons_frame.grid_propagate(False)
         
-        # Settings icon button
-        settings_button = tk.Button(header_frame, text="⚙️", font=("Arial", 20),
+        # Settings icon button (top)
+        settings_button = tk.Button(icons_frame, text="⚙️", font=("Arial", 24),
                                   bg="#ffffff", bd=0, command=self.open_settings,
-                                  cursor="hand2")
-        settings_button.grid(row=0, column=0, padx=(0, 10))
+                                  cursor="hand2", width=2, height=1)
+        settings_button.pack(pady=(10, 5))
+        
+        # Profile icon button (below settings)
+        profile_button = tk.Button(icons_frame, text="👤", font=("Arial", 24),
+                                 bg="#ffffff", bd=0, command=self.open_profile,
+                                 cursor="hand2", width=2, height=1)
+        profile_button.pack(pady=5)
+        
+        # Main content area
+        content_frame = tk.Frame(self.left_frame, bg="#ffffff")
+        content_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        content_frame.grid_rowconfigure(1, weight=1)
+        content_frame.grid_columnconfigure(0, weight=1)
         
         # Title
-        title_label = tk.Label(header_frame, text="Patient Information", 
+        title_label = tk.Label(content_frame, text="Patient Information", 
                               font=("Arial", 18, "bold"), bg="#ffffff")
-        title_label.grid(row=0, column=1)
-        
-        # Profile icon button  
-        profile_button = tk.Button(header_frame, text="👤", font=("Arial", 20),
-                                 bg="#ffffff", bd=0, command=self.open_profile,
-                                 cursor="hand2")
-        profile_button.grid(row=0, column=2, padx=(10, 0))
+        title_label.grid(row=0, column=0, pady=(0, 10))
         
         # Form frame
-        form_frame = tk.Frame(self.left_frame, bg="#ffffff")
-        form_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+        form_frame = tk.Frame(content_frame, bg="#ffffff")
+        form_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         form_frame.grid_columnconfigure(1, weight=1)
         
         # Form fields with dummy data
@@ -109,37 +124,7 @@ class MainScreen:
                                 width=20, height=2, command=self.save_form,
                                 relief="raised", bd=2)
         submit_button.grid(row=len(fields), column=0, columnspan=2, pady=20)
-        
-    def setup_right_section(self):
-        """Set up the right section with webcam display and start scanning button"""
-        # Configure right frame grid
-        self.right_frame.grid_rowconfigure(1, weight=1)
-        self.right_frame.grid_columnconfigure(0, weight=1)
-        
-        # Title for right section
-        title_label = tk.Label(self.right_frame, text="Webcam Preview", 
-                              font=("Arial", 16, "bold"), bg="#ffffff")
-        title_label.grid(row=0, column=0, pady=(10, 5), sticky="n")
-        
-        # Webcam display area
-        self.webcam_frame = tk.Frame(self.right_frame, bg="#000000", 
-                                   width=600, height=450, relief="sunken", bd=2)
-        self.webcam_frame.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
-        self.webcam_frame.grid_propagate(False)
-        
-        # Webcam label for displaying video feed
-        self.webcam_label = tk.Label(self.webcam_frame, bg="#000000", 
-                                   text="Initializing camera...", fg="white",
-                                   font=("Arial", 14))
-        self.webcam_label.pack(expand=True, fill="both")
-        
-        # Start scanning button
-        self.start_button = tk.Button(self.right_frame, text="Start Scanning",
-                                    font=("Arial", 14, "bold"), bg="#4CAF50", fg="white",
-                                    width=20, height=2, command=self.start_scanning,
-                                    relief="raised", bd=3)
-        self.start_button.grid(row=2, column=0, pady=20)
-        
+
     def setup_form(self):
         """Set up the form in the right section"""
         # Form frame
@@ -188,9 +173,142 @@ class MainScreen:
                                width=15, height=1, command=self.clear_form,
                                relief="raised", bd=2)
         clear_button.pack(side="left", padx=10)
+    
         
+    def open_settings(self):
+        """Handle settings button click"""
+        print("Opening settings page...")
+        # TODO: Implement navigation to settings page
+        tk.messagebox.showinfo("Settings", "Opening settings page...")
+        
+    def open_profile(self):
+        """Handle profile button click"""
+        print("Opening profile page...")
+        # TODO: Implement navigation to profile page
+        tk.messagebox.showinfo("Profile", "Opening profile page...")
+        
+    def save_form(self):
+        """Handle form save"""
+        print("Saving patient information...")
+        # TODO: Implement actual data saving logic
+        tk.messagebox.showinfo("Success", "Patient information saved successfully!")
+        
+    def clear_form(self):
+        """Clear all form fields"""
+        print("Clearing patient information form...")
+        # TODO: Implement form clearing logic
+        tk.messagebox.showinfo("Cleared", "Form cleared successfully!")
+        
+    def on_closing(self):
+        """Handle window closing"""
+        if self.cap:
+            self.cap.release()
+        self.root.destroy()
+
+        
+    # ---------- RIGHT SECTION BELOW ----------
+
+    # --- Modular function that builds the right side of the screen ---
+    def setup_right_section(self):
+        # Configure the right frame layout and grid weight
+        self.right_frame.grid_rowconfigure(1, weight=1)
+        self.right_frame.grid_columnconfigure(0, weight=1)
+        
+        # Title for right section
+        title_label = tk.Label( #Defines the title label details
+            self.right_frame, 
+            text="Webcam Preview", 
+            font=("Arial", 16, "bold"), 
+            bg="#ffffff"
+        )
+        title_label.grid( #Defines the grid placement of the title label
+            row=0, 
+            column=0, 
+            pady=(10, 5), 
+            sticky="n"
+        )
+        
+        # --- Webcam Preview Display Area ---
+        # Webcam frame details
+        self.webcam_frame = tk.Frame( 
+            self.right_frame, 
+            bg="#000000", 
+            width=600, 
+            height=450, 
+            relief="sunken", 
+            bd=2
+        )
+        # Webcam frame grid placement
+        self.webcam_frame.grid(
+            row=1, 
+            column=0, 
+            padx=20, 
+            pady=10, 
+            sticky="nsew"
+        )
+        self.webcam_frame.grid_propagate(False) #Disable automatic frame resizing
+        
+        # Webcam label for displaying video feed
+        self.webcam_label = tk.Label( #webcam label details
+            self.webcam_frame, 
+            bg="#000000",             
+            text="Initializing camera...", 
+            fg="white",
+            font=("Arial", 14)
+        )
+        self.webcam_label.pack(expand=True, fill="both") #Enable automatic resizing for the label
+
+        # Webcam ON/OFF toggle switch & icon
+        self.toggle_camera_button = tk.Button( #toggle camera button details
+            self.right_frame,
+            text="ON/OFF Camera",
+            font=("Arial", 12, "bold"),
+            bg="#50ff36",  #color green when active
+            fg="white",
+            width=18,
+            height=1,
+            command=self.toggle_camera,
+            relief="raised",
+            bd=2
+        )
+        self.toggle_camera_button.grid(row=2, column=0, pady=(5, 25), sticky="n") #toggle camera button grid placement
+
+        # --- Start scanning/calibration buttons --- 
+        button_frame = tk.Frame(self.right_frame, bg="#ffffff") #init button frame
+        button_frame.grid(row=3, column=0, pady=(10, 20)) #define button frame grid placement
+
+        # Start calibration button
+        self.calibration_button = tk.Button( #start calibration button details
+            button_frame,
+            text="Start Calibration",
+            font=("Arial", 14, "bold"),
+            bg="#2196F3",
+            fg="white",
+            width=20,
+            height=2,
+            command=self.start_calibration,
+            relief="raised",
+            bd=3
+        )
+        self.calibration_button.pack(pady=(0, 10)) #start calibration button grid placement
+
+        # Start scanning button
+        self.start_button = tk.Button( #start scanning button details
+            self.right_frame, 
+            text="Start Scanning",
+            font=("Arial", 14, "bold"), 
+            bg="#4CAF50", 
+            fg="white",
+            width=20, 
+            height=2, 
+            command = self.start_scanning,
+            relief="raised", 
+            bd=3
+        )
+        self.start_button.grid(row=2, column=0, pady=20) #start scanning button grid placement
+        
+
     def start_webcam_preview(self):
-        """Start the webcam preview"""
         try:
             self.cap = cv2.VideoCapture(0)
             if self.cap.isOpened():
@@ -227,36 +345,7 @@ class MainScreen:
         # TODO: Implement navigation to camera page
         # This could involve opening a new window or switching frames
         tk.messagebox.showinfo("Start Scanning", "Navigating to camera page...")
-        
-    def open_settings(self):
-        """Handle settings button click"""
-        print("Opening settings page...")
-        # TODO: Implement navigation to settings page
-        tk.messagebox.showinfo("Settings", "Opening settings page...")
-        
-    def open_profile(self):
-        """Handle profile button click"""
-        print("Opening profile page...")
-        # TODO: Implement navigation to profile page
-        tk.messagebox.showinfo("Profile", "Opening profile page...")
-        
-    def save_form(self):
-        """Handle form save"""
-        print("Saving patient information...")
-        # TODO: Implement actual data saving logic
-        tk.messagebox.showinfo("Success", "Patient information saved successfully!")
-        
-    def clear_form(self):
-        """Clear all form fields"""
-        print("Clearing patient information form...")
-        # TODO: Implement form clearing logic
-        tk.messagebox.showinfo("Cleared", "Form cleared successfully!")
-        
-    def on_closing(self):
-        """Handle window closing"""
-        if self.cap:
-            self.cap.release()
-        self.root.destroy()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
