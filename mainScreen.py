@@ -257,7 +257,7 @@ class MainScreen:
             fg="white",
             font=("Arial", 14)
         )
-        self.webcam_label.grid(expand=True, fill="both") #Enable automatic resizing for the label
+        self.webcam_label.pack(expand=True, fill="both") #Enable automatic resizing for the label
 
         # Webcam ON/OFF toggle switch & icon
         self.toggle_camera_button = tk.Button( #toggle camera button details
@@ -276,11 +276,11 @@ class MainScreen:
 
         # --- Start scanning/calibration buttons --- 
         button_frame = tk.Frame(self.right_frame, bg="#ffffff") #init button frame
-        button_frame.pack(pady=(10, 20)) #define button frame grid placement
+        button_frame.grid(row=3, column=0, pady=(10, 20), sticky="n") #define button frame grid placement
 
         # Start scanning button
         self.start_button = tk.Button( #start scanning button details
-            self.right_frame, 
+            button_frame, 
             text="Start Scanning",
             font=("Arial", 14), 
             bg="#4CAF50", 
@@ -291,11 +291,11 @@ class MainScreen:
             relief="raised", 
             bd=3
         )
-        self.start_button.pack(pady=20) #start scanning button grid placement
+        self.start_button.grid(row=4, column=0, pady=20, sticky="n") #start scanning button grid placement
 
         # Start calibration button
         self.calibration_button = tk.Button( #start calibration button details
-            self.right_frame,
+            button_frame,
             text="Start Calibration",
             font=("Arial", 14),
             bg="#2196F3",
@@ -306,10 +306,10 @@ class MainScreen:
             relief="raised",
             bd=3
         )
-        self.calibration_button.pack(pady=(0, 10)) #start calibration button grid placement
+        self.calibration_button.grid(row=5, column=0, pady=(0, 10), sticky="n") #start calibration button grid placement
 
         
-    # --- Toggle webcam ON/OFF function ---
+    # --- Toggle webcam ON/OFF function --- (keep)
     def toggle_camera(self):
         if self.webcam_active:
             self.webcam_active = False
@@ -333,7 +333,6 @@ class MainScreen:
             self.webcam_label.config(text=f"Camera error: {str(e)}", fg="red")
             
     def update_webcam(self):
-        """Update the webcam display"""
         if self.webcam_active and self.cap and self.cap.isOpened():
             ret, frame = self.cap.read()
             if ret:
@@ -353,12 +352,30 @@ class MainScreen:
             self.root.after(30, self.update_webcam)
 
     def stop_webcam(self):
-        pass
+        """Safely stop the webcam feed and release resources."""
+        if self.webcam_active:
+            self.webcam_active = False  # stop update loop
+
+        if hasattr(self, "cap") and self.cap and self.cap.isOpened():
+            self.cap.release()
+            self.cap = None
+
+        # Clear the webcam display
+        self.webcam_label.config(image="", text="Camera stopped", fg="white")
+        self.webcam_label.image = None
+
+        # Update toggle button color to red
+        if hasattr(self, "toggle_camera_button"):
+            self.toggle_camera_button.config(bg="#f44336")
+        
+        print("Webcam stopped and resources released.")
 
 
     # --- Start calibration & scanning functions ---
     def start_calibration(self):
-        pass
+        """Start calibration process"""
+        print("Starting calibration...")
+        tk.messagebox.showinfo("Calibration", "Calibration started")
         
     def start_scanning(self):
         """Handle start scanning button click"""
