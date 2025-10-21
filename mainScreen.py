@@ -40,34 +40,40 @@ class MainScreen:
     def setup_left_section(self):
         """Set up the left section with form, settings, and profile"""
         # Configure left frame grid
-        self.left_frame.grid_rowconfigure(1, weight=1)
-        self.left_frame.grid_columnconfigure(0, weight=1)
+        self.left_frame.grid_rowconfigure(0, weight=1)
+        self.left_frame.grid_columnconfigure(1, weight=1)
         
-        # Header with icons
-        header_frame = tk.Frame(self.left_frame, bg="#ffffff")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 0))
-        header_frame.grid_columnconfigure(1, weight=1)
+        # Left icons column
+        icons_frame = tk.Frame(self.left_frame, bg="#ffffff", width=60)
+        icons_frame.grid(row=0, column=0, sticky="ns", padx=(10, 5), pady=10)
+        icons_frame.grid_propagate(False)
         
-        # Settings icon button
-        settings_button = tk.Button(header_frame, text="⚙️", font=("Arial", 20),
+        # Settings icon button (top)
+        settings_button = tk.Button(icons_frame, text="⚙️", font=("Arial", 24),
                                   bg="#ffffff", bd=0, command=self.open_settings,
-                                  cursor="hand2")
-        settings_button.grid(row=0, column=0, padx=(0, 10))
+                                  cursor="hand2", width=2, height=1)
+        settings_button.pack(pady=(10, 5))
+        
+        # Profile icon button (below settings)
+        profile_button = tk.Button(icons_frame, text="👤", font=("Arial", 24),
+                                 bg="#ffffff", bd=0, command=self.open_profile,
+                                 cursor="hand2", width=2, height=1)
+        profile_button.pack(pady=5)
+        
+        # Main content area
+        content_frame = tk.Frame(self.left_frame, bg="#ffffff")
+        content_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        content_frame.grid_rowconfigure(1, weight=1)
+        content_frame.grid_columnconfigure(0, weight=1)
         
         # Title
-        title_label = tk.Label(header_frame, text="Patient Information", 
+        title_label = tk.Label(content_frame, text="Patient Information", 
                               font=("Arial", 18, "bold"), bg="#ffffff")
-        title_label.grid(row=0, column=1)
-        
-        # Profile icon button  
-        profile_button = tk.Button(header_frame, text="👤", font=("Arial", 20),
-                                 bg="#ffffff", bd=0, command=self.open_profile,
-                                 cursor="hand2")
-        profile_button.grid(row=0, column=2, padx=(10, 0))
+        title_label.grid(row=0, column=0, pady=(0, 10))
         
         # Form frame
-        form_frame = tk.Frame(self.left_frame, bg="#ffffff")
-        form_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+        form_frame = tk.Frame(content_frame, bg="#ffffff")
+        form_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         form_frame.grid_columnconfigure(1, weight=1)
         
         # Form fields with dummy data
