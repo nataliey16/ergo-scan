@@ -16,6 +16,9 @@ class MainScreen:
         self.webcam_active = False
         self.calibrated = False  #state variable to track if calibration has been done or not
         
+        # Initialize profile data for name display
+        self.profile_name = "John Doe"
+        
         # Calling setup functions to initialize UI and webcam
         self.setup_ui()
         self.start_webcam_preview()
@@ -23,26 +26,52 @@ class MainScreen:
     # --- Function that sets up the UI (split into left and right sections) ---
     def setup_ui(self):
         # Configure the root layout grid and weight
-        self.root.grid_columnconfigure(0, weight=1) #configure column 0 for left section
-        self.root.grid_columnconfigure(1, weight=1) #configure column 1 for right section
+        self.root.grid_columnconfigure(1, weight=1) #configure column 1 for form section
+        self.root.grid_columnconfigure(2, weight=1) #configure column 2 for right section
         self.root.grid_rowconfigure(0, weight=1)
         
+        # Create top-left icons frame
+        self.icons_frame = tk.Frame(self.root, bg="#f0f0f0")
+        self.icons_frame.grid(row=0, column=0, sticky="nw", padx=10, pady=10)
+        
         # --- Creating Frames --- 
-        #Left section frame
+        #Left section frame (now for form)
         self.left_frame = tk.Frame(self.root, bg="#ffffff")
-        self.left_frame.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
+        self.left_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 5), pady=10)
 
         #Right section frame
         self.right_frame = tk.Frame(self.root, bg="#ffffff")
-        self.right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        self.right_frame.grid(row=0, column=2, sticky="nsew", padx=(5, 10), pady=10)
         
         # --- Call set up functions for each section ---
-        #Left Section - Form and Icons
+        #Setup icons section
+        self.setup_icons_section()
+        
+        #Left Section - Form
         self.setup_left_section()
 
         #Right Section - Webcam Display
         self.setup_right_section()
 
+
+    # --- Setup icons section (profile and settings) ---
+    def setup_icons_section(self):
+        # Profile icon with name
+        profile_frame = tk.Frame(self.icons_frame, bg="#f0f0f0")
+        profile_frame.pack(pady=(0, 10), anchor="w")
+        
+        profile_icon = tk.Button(profile_frame, text="👤", font=("Arial", 16), bg="#e0e0e0", 
+                                 command=self.show_profile_options, relief="flat", width=3)
+        profile_icon.pack(side="left")
+        
+        profile_label = tk.Label(profile_frame, text=self.profile_name, font=("Arial", 10), 
+                                 bg="#f0f0f0", fg="#333333")
+        profile_label.pack(side="left", padx=(5, 0))
+        
+        # Settings icon
+        settings_icon = tk.Button(self.icons_frame, text="⚙", font=("Arial", 16), bg="#e0e0e0", 
+                                  command=self.show_settings, relief="flat", width=3)
+        settings_icon.pack(pady=(0, 10), anchor="w")
 
     # ---------- LEFT SECTION BELOW ----------
 
@@ -50,33 +79,16 @@ class MainScreen:
     def setup_left_section(self):
         # Configure the left frame layout and grid weight
         self.left_frame.grid_rowconfigure(0, weight=1)
-        self.left_frame.grid_columnconfigure(1, weight=1)
+        self.left_frame.grid_columnconfigure(0, weight=1)
         
-        # Left icons column
-        icons_frame = tk.Frame(self.left_frame, bg="#ffffff", width=60)
-        icons_frame.grid(row=0, column=0, sticky="ns", padx=(10, 5), pady=10)
-        icons_frame.grid_propagate(False)
-        
-        # Settings icon button (top)
-        settings_button = tk.Button(icons_frame, text="⚙️", font=("Arial", 24),
-                                  bg="#ffffff", bd=0, command=self.open_settings,
-                                  cursor="hand2", width=2, height=1)
-        settings_button.pack(pady=(10, 5))
-        
-        # Profile icon button (below settings)
-        profile_button = tk.Button(icons_frame, text="👤", font=("Arial", 24),
-                                 bg="#ffffff", bd=0, command=self.open_profile,
-                                 cursor="hand2", width=2, height=1)
-        profile_button.pack(pady=5)
-        
-        # Main content area
+        # Main content area (no icons frame)
         content_frame = tk.Frame(self.left_frame, bg="#ffffff")
-        content_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        content_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         content_frame.grid_rowconfigure(1, weight=1)
         content_frame.grid_columnconfigure(0, weight=1)
         
         # Title
-        title_label = tk.Label(content_frame, text="Patient Information", 
+        title_label = tk.Label(content_frame, text="Body Measurements", 
                               font=("Arial", 18, "bold"), bg="#ffffff")
         title_label.grid(row=0, column=0, pady=(0, 10))
         
@@ -85,18 +97,13 @@ class MainScreen:
         form_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         form_frame.grid_columnconfigure(1, weight=1)
         
-        # Form fields with dummy data
+        # Form fields with body measurements
         fields = [
-            ("Full Name:", "John Smith"),
-            ("Age:", "28"),
-            ("Height (cm):", "175"),
-            ("Weight (kg):", "70"),
-            ("Occupation:", "Software Developer"),
-            ("Email:", "john.smith@email.com"),
-            ("Phone:", "(555) 123-4567"),
-            ("Medical History:", "No significant medical history"),
-            ("Current Symptoms:", "Lower back pain, neck stiffness"),
-            ("Exercise Frequency:", "3 times per week")
+            ("Shoulder Width (cm):", "45"),
+            ("Torso Length (cm):", "60"),
+            ("Hip Width (cm):", "38"),
+            ("Arm Length (cm):", "65"),
+            ("Leg Length (cm):", "85")
         ]
         
         for i, (label_text, default_value) in enumerate(fields):
@@ -106,20 +113,12 @@ class MainScreen:
             label.grid(row=i, column=0, sticky="w", pady=5, padx=(0, 10))
             
             # Entry field
-            if label_text in ["Medical History:", "Current Symptoms:"]:
-                # Text widget for longer text
-                text_widget = tk.Text(form_frame, height=3, width=40, font=("Arial", 10),
-                                    relief="solid", bd=1)
-                text_widget.grid(row=i, column=1, sticky="ew", pady=5)
-                text_widget.insert("1.0", default_value)
-            else:
-                # Regular entry
-                entry = tk.Entry(form_frame, font=("Arial", 10), relief="solid", bd=1)
-                entry.grid(row=i, column=1, sticky="ew", pady=5)
-                entry.insert(0, default_value)
+            entry = tk.Entry(form_frame, font=("Arial", 10), relief="solid", bd=1)
+            entry.grid(row=i, column=1, sticky="ew", pady=5)
+            entry.insert(0, default_value)
         
         # Submit button
-        submit_button = tk.Button(form_frame, text="Save Information",
+        submit_button = tk.Button(form_frame, text="Save Measurements",
                                 font=("Arial", 12, "bold"), bg="#2196F3", fg="white",
                                 width=20, height=2, command=self.save_form,
                                 relief="raised", bd=2)
@@ -267,7 +266,7 @@ class MainScreen:
             fg="white",
             width=18,
             height=1,
-            command=self.toggle_camera,
+            # command=self.toggle_camera,
             relief="raised",
             bd=2
         )
@@ -286,7 +285,7 @@ class MainScreen:
             fg="white",
             width=20,
             height=2,
-            command=self.start_calibration,
+            # command=self.start_calibration,
             relief="raised",
             bd=3
         )
@@ -345,6 +344,31 @@ class MainScreen:
         # TODO: Implement navigation to camera page
         # This could involve opening a new window or switching frames
         tk.messagebox.showinfo("Start Scanning", "Navigating to camera page...")
+
+    def show_profile_options(self):
+        """Handle profile icon click"""
+        print("Profile options clicked")
+        tk.messagebox.showinfo("Profile", f"Profile: {self.profile_name}")
+
+    def show_settings(self):
+        """Handle settings icon click"""
+        print("Settings clicked")
+        tk.messagebox.showinfo("Settings", "Settings menu")
+
+    def toggle_camera(self):
+        """Toggle camera on/off"""
+        if self.cap and self.cap.isOpened():
+            self.cap.release()
+            self.cap = None
+            print("Camera turned off")
+        else:
+            self.cap = cv2.VideoCapture(0)
+            print("Camera turned on")
+
+    def start_calibration(self):
+        """Start calibration process"""
+        print("Starting calibration...")
+        tk.messagebox.showinfo("Calibration", "Calibration started")
 
 
 if __name__ == "__main__":
