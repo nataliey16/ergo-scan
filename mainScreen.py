@@ -10,10 +10,11 @@ class MainScreen:
         self.root.title("ErgoScan - Main Screen") #title
         self.root.geometry("1200x800") #resolution of window
         self.root.configure(bg="#f0f0f0") #background color
-    
+        
         # Initialize webcam variables
         self.cap = None
-        self.webcam_active = False
+        self.webcam_active = True  # Set to True initially since we want camera on by default
+        self.start_button = tk.Button(self.root, text="Start", state="disabled")
         self.calibrated = False  #state variable to track if calibration has been done or not
         
         # Initialize profile data for name display
@@ -81,7 +82,28 @@ class MainScreen:
         self.left_frame.grid_rowconfigure(0, weight=1)
         self.left_frame.grid_columnconfigure(0, weight=1)
         
-        # Main content area (no icons frame)
+        # Left icons column
+        icons_frame = tk.Frame(self.left_frame, bg="#ffffff", width=60)
+        icons_frame.grid(row=0, column=0, sticky="ns", padx=(10, 5), pady=10)
+        icons_frame.grid_propagate(False)
+        
+        # Settings icon button (top)
+        settings_button = tk.Button(icons_frame, text="⚙️", font=("Arial", 24),
+            bg="#ffffff", bd=0, command=self.open_settings,
+            cursor="hand2", width=2, height=1,
+            activebackground="#ffffff", highlightthickness=0,
+            relief="flat")
+        settings_button.pack(pady=(10, 5))
+        
+        # Profile icon button (below settings)
+        profile_button = tk.Button(icons_frame, text="👤", font=("Arial", 24),
+            bg="#ffffff", bd=0, command=self.open_profile,
+            cursor="hand2", width=2, height=1,
+            activebackground="#ffffff", highlightthickness=0,
+            relief="flat")
+        profile_button.pack(pady=5)
+        
+        # Main content area
         content_frame = tk.Frame(self.left_frame, bg="#ffffff")
         content_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         content_frame.grid_rowconfigure(1, weight=1)
@@ -121,7 +143,8 @@ class MainScreen:
         submit_button = tk.Button(form_frame, text="Save Measurements",
                                 font=("Arial", 12, "bold"), bg="#2196F3", fg="white",
                                 width=20, height=2, command=self.save_form,
-                                relief="raised", bd=2)
+                                relief="raised", bd=2, activebackground="#1976D2",
+                                activeforeground="white", highlightthickness=0)
         submit_button.grid(row=len(fields), column=0, columnspan=2, pady=20)
 
     def setup_form(self):
@@ -248,65 +271,95 @@ class MainScreen:
         self.webcam_frame.grid_propagate(False) #Disable automatic frame resizing
         
         # Webcam label for displaying video feed
+        # Create initial blank image to maintain consistent size
+        initial_blank = Image.new('RGB', (580, 430), color='black')
+        initial_photo = ImageTk.PhotoImage(initial_blank)
+        
         self.webcam_label = tk.Label( #webcam label details
             self.webcam_frame, 
             bg="#000000",             
+            image=initial_photo,
             text="Initializing camera...", 
             fg="white",
-            font=("Arial", 14)
+            font=("Arial", 14),
+            compound='center'  # Show text over image
         )
+        self.webcam_label.image = initial_photo  # Keep reference to prevent garbage collection
         self.webcam_label.pack(expand=True, fill="both") #Enable automatic resizing for the label
 
-        # Webcam ON/OFF toggle switch & icon
-        self.toggle_camera_button = tk.Button( #toggle camera button details
-            self.right_frame,
-            text="ON/OFF Camera",
-            font=("Arial", 12, "bold"),
-            bg="#50ff36",  #color green when active
-            fg="white",
-            width=18,
-            height=1,
-            # command=self.toggle_camera,
-            relief="raised",
-            bd=2
+
+        # --- Toggle webcam ON/OFF switch details & grid placement ---
+        self.toggle_camera_switch = ToggleSwitch( #toggle switch details using ToggleSwitch class
+            self.right_frame, 
+            command=self.on_camera_toggle, 
+            initial_state=self.webcam_active, #intial state based on webcam_active variable
+            bg="#ffffff"
         )
-        self.toggle_camera_button.grid(row=2, column=0, pady=(5, 25), sticky="n") #toggle camera button grid placement
+        self.toggle_camera_switch.grid( #grid placement
+            row=2, 
+            column=0, 
+            pady=(5, 25), 
+            sticky="n"
+        )
 
         # --- Start scanning/calibration buttons --- 
         button_frame = tk.Frame(self.right_frame, bg="#ffffff") #init button frame
-        button_frame.grid(row=3, column=0, pady=(10, 20)) #define button frame grid placement
+        button_frame.grid(row=3, column=0, pady=(10, 20), sticky="n") #define button frame grid placement
 
         # Start calibration button
         self.calibration_button = tk.Button( #start calibration button details
             button_frame,
             text="Start Calibration",
-            font=("Arial", 14, "bold"),
+            font=("Arial", 14),
             bg="#2196F3",
             fg="white",
             width=20,
             height=2,
-            # command=self.start_calibration,
+            command = self.start_calibration, # call function on click
             relief="raised",
-            bd=3
+            bd=3,
+            activebackground="#2196F3",  # Same as normal background
+            activeforeground="white",
+            highlightthickness=0,
+            highlightcolor="#2196F3",     # Remove highlight color
+            highlightbackground="#2196F3", # Remove highlight background
+            takefocus=False               # Prevent taking focus
         )
-        self.calibration_button.pack(pady=(0, 10)) #start calibration button grid placement
+        self.calibration_button.grid(row=4, column=0, pady=(10, 5), sticky="n") #start calibration button grid placement
 
-        # Start scanning button
+        # Start scanning button 
         self.start_button = tk.Button( #start scanning button details
-            self.right_frame, 
+            button_frame, 
             text="Start Scanning",
-            font=("Arial", 14, "bold"), 
+            font=("Arial", 14), 
             bg="#4CAF50", 
             fg="white",
             width=20, 
             height=2, 
-            command = self.start_scanning,
+            command = self.start_scanning, #call function on click
             relief="raised", 
-            bd=3
+            bd=3,
+            activebackground="#4CAF50",   # Same as normal background
+            activeforeground="white",
+            highlightthickness=0,
+            highlightcolor="#4CAF50",     # Remove highlight color
+            highlightbackground="#4CAF50", # Remove highlight background
+            takefocus=False               # Prevent taking focus
         )
-        self.start_button.grid(row=2, column=0, pady=20) #start scanning button grid placement
-        
+        self.start_button.grid(row=5, column=0, pady=(5, 10), sticky="n") #start scanning button grid placement
 
+
+    # --- Toggle webcam ON/OFF function ---
+    def on_camera_toggle(self, state):
+        if state:
+            print("Camera ON")
+            self.start_webcam_preview()
+        else:
+            print("Camera OFF")
+            self.stop_webcam()
+
+
+    # --- Webcam Functions ---
     def start_webcam_preview(self):
         try:
             self.cap = cv2.VideoCapture(0)
@@ -319,7 +372,6 @@ class MainScreen:
             self.webcam_label.config(text=f"Camera error: {str(e)}", fg="red")
             
     def update_webcam(self):
-        """Update the webcam display"""
         if self.webcam_active and self.cap and self.cap.isOpened():
             ret, frame = self.cap.read()
             if ret:
@@ -337,13 +389,49 @@ class MainScreen:
                 
             # Schedule next update
             self.root.after(30, self.update_webcam)
+
+    def stop_webcam(self):
+        """Safely stop the webcam feed and release resources."""
+        if self.webcam_active:
+            self.webcam_active = False  # stop update loop
+
+        if hasattr(self, "cap") and self.cap and self.cap.isOpened():
+            self.cap.release()
+            self.cap = None
+
+        # Create a blank image with the same dimensions as the camera feed
+        blank_image = Image.new('RGB', (580, 430), color='black')
+        blank_photo = ImageTk.PhotoImage(blank_image)
+        
+        # Update label with blank image and overlay text
+        self.webcam_label.config(
+            image=blank_photo, 
+            text="Camera OFF", 
+            fg="white", 
+            compound='center', 
+            font=("Arial", 16)
+        )
+        self.webcam_label.image = blank_photo
+
+        # Update toggle button color to red
+        if hasattr(self, "toggle_camera_button"):
+            self.toggle_camera_button.config(bg="#f44336")
+        
+        print("Webcam stopped and resources released.")
+
+
+    # --- Start calibration & scanning functions ---
+    def start_calibration(self):
+        """Start calibration process"""
+        print("Starting calibration...")
+        tk.messagebox.showinfo("Calibration", "Calibration started")
         
     def start_scanning(self):
         """Handle start scanning button click"""
         print("Navigating to camera page...")
         # TODO: Implement navigation to camera page
         # This could involve opening a new window or switching frames
-        tk.messagebox.showinfo("Start Scanning", "Navigating to camera page...")
+        tk.messagebox.showinfo("Start Scanning", "Scanning Started")
 
     def show_profile_options(self):
         """Handle profile icon click"""
@@ -369,6 +457,46 @@ class MainScreen:
         """Start calibration process"""
         print("Starting calibration...")
         tk.messagebox.showinfo("Calibration", "Calibration started")
+
+
+    # --- Class for Webcam ON/OFF iOS toggle switch look ---
+class ToggleSwitch(tk.Frame):
+    def __init__(self, parent, command=None, **kwargs):
+
+        self.state = kwargs.pop('initial_state', False)
+        self.command = command
+        super().__init__(parent, **kwargs)
+
+        self.canvas = tk.Canvas(self, width=60, height=30, bg=self["bg"], highlightthickness=0)
+        self.canvas.pack()
+        self.rect = self.canvas.create_oval(
+            5, 5, 25, 25, 
+            fill="white", 
+            outline=""
+        )
+        self.bg_rect = self.canvas.create_rectangle(
+            0, 0, 60, 30, 
+            outline="", 
+            fill="#f44336"
+        )
+        self.canvas.tag_lower(self.bg_rect)
+        self.canvas.bind("<Button-1>", self.toggle)
+
+        # Set initial visual state
+        if self.state:
+            self.canvas.itemconfig(self.bg_rect, fill="#50ff36")
+            self.canvas.move(self.rect, 30, 0)
+
+    def toggle(self, event=None):
+        self.state = not self.state
+        if self.state:
+            self.canvas.itemconfig(self.bg_rect, fill="#50ff36")
+            self.canvas.move(self.rect, 30, 0)
+        else:
+            self.canvas.itemconfig(self.bg_rect, fill="#f44336")
+            self.canvas.move(self.rect, -30, 0)
+        if self.command:
+            self.command(self.state)
 
 
 if __name__ == "__main__":
