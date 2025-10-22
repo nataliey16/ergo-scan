@@ -11,7 +11,6 @@ class MainScreen:
         self.root.geometry("1200x800") #resolution of window
         self.root.configure(bg="#f0f0f0") #background color
         
-    
         # Initialize webcam variables
         self.cap = None
         self.webcam_active = True  # Set to True initially since we want camera on by default
@@ -360,7 +359,7 @@ class MainScreen:
             self.stop_webcam()
 
 
-    # --- Start calibration & scanning functions ---
+    # --- Webcam Functions ---
     def start_webcam_preview(self):
         try:
             self.cap = cv2.VideoCapture(0)
@@ -434,6 +433,31 @@ class MainScreen:
         # This could involve opening a new window or switching frames
         tk.messagebox.showinfo("Start Scanning", "Scanning Started")
 
+    def show_profile_options(self):
+        """Handle profile icon click"""
+        print("Profile options clicked")
+        tk.messagebox.showinfo("Profile", f"Profile: {self.profile_name}")
+
+    def show_settings(self):
+        """Handle settings icon click"""
+        print("Settings clicked")
+        tk.messagebox.showinfo("Settings", "Settings menu")
+
+    def toggle_camera(self):
+        """Toggle camera on/off"""
+        if self.cap and self.cap.isOpened():
+            self.cap.release()
+            self.cap = None
+            print("Camera turned off")
+        else:
+            self.cap = cv2.VideoCapture(0)
+            print("Camera turned on")
+
+    def start_calibration(self):
+        """Start calibration process"""
+        print("Starting calibration...")
+        tk.messagebox.showinfo("Calibration", "Calibration started")
+
 
     # --- Class for Webcam ON/OFF iOS toggle switch look ---
 class ToggleSwitch(tk.Frame):
@@ -473,31 +497,6 @@ class ToggleSwitch(tk.Frame):
             self.canvas.move(self.rect, -30, 0)
         if self.command:
             self.command(self.state)
-
-    def show_profile_options(self):
-        """Handle profile icon click"""
-        print("Profile options clicked")
-        tk.messagebox.showinfo("Profile", f"Profile: {self.profile_name}")
-
-    def show_settings(self):
-        """Handle settings icon click"""
-        print("Settings clicked")
-        tk.messagebox.showinfo("Settings", "Settings menu")
-
-    def toggle_camera(self):
-        """Toggle camera on/off"""
-        if self.cap and self.cap.isOpened():
-            self.cap.release()
-            self.cap = None
-            print("Camera turned off")
-        else:
-            self.cap = cv2.VideoCapture(0)
-            print("Camera turned on")
-
-    def start_calibration(self):
-        """Start calibration process"""
-        print("Starting calibration...")
-        tk.messagebox.showinfo("Calibration", "Calibration started")
 
 
 if __name__ == "__main__":
