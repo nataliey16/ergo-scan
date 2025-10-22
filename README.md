@@ -54,6 +54,8 @@ source venv/bin/activate
 
 ```bash
 pip install mediapipe opencv-contrib-python caer
+pip install Pillow
+pip install opencv-python
 ```
 
 - caer provides helpful utilities for image processing.
