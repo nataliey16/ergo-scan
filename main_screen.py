@@ -14,16 +14,16 @@ class MainScreen:
         
         # Initialize webcam variables
         self.cap = None
-        self.webcam_active = True  # Set to True initially since we want camera on by default
+        # Start the app with camera OFF by default
+        self.webcam_active = False
         self.start_button = tk.Button(self.root, text="Start", state="disabled")
         self.calibrated = False  #state variable to track if calibration has been done or not
         
         # Initialize profile data for name display
         self.profile_name = "John Doe"
         
-        # Calling setup functions to initialize UI and webcam
+        # Calling setup functions to initialize UI. Do NOT start webcam automatically.
         self.setup_ui()
-        self.start_webcam_preview()
 
     # --- Function that sets up the UI (split into left and right sections) ---
     def setup_ui(self):
@@ -276,11 +276,13 @@ class MainScreen:
         initial_blank = Image.new('RGB', (580, 430), color='black')
         initial_photo = ImageTk.PhotoImage(initial_blank)
         
+        # Show appropriate initial text depending on whether webcam is active
+        label_text = "Initializing camera..." if self.webcam_active else "Camera OFF"
         self.webcam_label = tk.Label( #webcam label details
             self.webcam_frame, 
             bg="#000000",             
             image=initial_photo,
-            text="Initializing camera...", 
+            text=label_text, 
             fg="white",
             font=("Arial", 14),
             compound='center'  # Show text over image
