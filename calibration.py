@@ -172,7 +172,8 @@ class BodyCalibrationInstructions:
         if self.cap:
             self.cap.release()
 
-# Run the app
-root = Tk()
-BodyCalibrationInstructions(root)
-root.mainloop()
+# Run the app only if this file is executed directly
+if __name__ == "__main__":
+    root = Tk()
+    BodyCalibrationInstructions(root)
+    root.mainloop()
