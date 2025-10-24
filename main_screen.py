@@ -313,7 +313,7 @@ class MainScreen:
             self.webcam_frame, 
             bg="#000000",             
             image=initial_photo,
-            text="Initializing camera...", 
+            text="Toggle Camera ON to Start", 
             fg="white",
             font=("Arial", 14),
             compound='center'  # Show text over image
