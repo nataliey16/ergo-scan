@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 import cv2
 from PIL import Image, ImageTk
 from calibration_instructions import BodyCalibrationInstructions
+from ergoscan_settings import ErgoScanSettings
 
 class MainScreen:
     # --- Initialize the main screen GUI ---
@@ -63,7 +64,7 @@ class MainScreen:
         profile_frame.pack(pady=(0, 10), anchor="w")
         
         profile_icon = tk.Button(profile_frame, text="👤", font=("Arial", 16), bg="#e0e0e0", 
-                                 command=self.show_profile_options, relief="flat", width=3)
+                                 command=self.open_profile, relief="flat", width=3)
         profile_icon.pack(side="left")
         
         profile_label = tk.Label(profile_frame, text=self.profile_name, font=("Arial", 10), 
@@ -102,7 +103,7 @@ class MainScreen:
             cursor="hand2", width=2, height=1,
             activebackground="#ffffff", highlightthickness=0,
             relief="flat")
-        profile_button.pack(pady=5)
+        profile_button.pack(pady=(10, 5))
         
         # Main content area
         content_frame = tk.Frame(self.left_frame, bg="#ffffff")
@@ -148,80 +149,111 @@ class MainScreen:
                                 activeforeground="white", highlightthickness=0)
         submit_button.grid(row=len(fields), column=0, columnspan=2, pady=20)
 
-    def setup_form(self):
-        """Set up the form in the right section"""
-        # Form frame
-        form_frame = tk.Frame(self.right_frame, bg="#ffffff", relief="groove", bd=2)
-        form_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
-        form_frame.grid_columnconfigure(1, weight=1)
+    def open_profile(self):
+        """Handle profile button click - allows changing profile name"""
+        print("Changing profile name...")
         
-        # Form fields
-        fields = [
-            ("Name:", "name"),
-            ("Age:", "age"),
-            ("Height (cm):", "height"),
-            ("Weight (kg):", "weight"),
-            ("Occupation:", "occupation"),
-            ("Workspace Type:", "workspace")
-        ]
+        # Create a simple dialog to change profile name
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Edit Profile")
+        dialog.geometry("300x150")
+        dialog.configure(bg="#ffffff")
+        dialog.resizable(False, False)
         
-        self.form_vars = {}
+        # Center the dialog on parent window
+        dialog.transient(self.root)
+        dialog.grab_set()
         
-        for i, (label_text, var_name) in enumerate(fields):
-            # Label
-            label = tk.Label(form_frame, text=label_text, font=("Arial", 12),
-                           bg="#ffffff", anchor="w")
-            label.grid(row=i, column=0, sticky="w", padx=10, pady=8)
-            
-            # Entry
-            self.form_vars[var_name] = tk.StringVar()
-            entry = tk.Entry(form_frame, textvariable=self.form_vars[var_name],
-                           font=("Arial", 12), width=25)
-            entry.grid(row=i, column=1, sticky="ew", padx=10, pady=8)
+        # Main frame
+        main_frame = tk.Frame(dialog, bg="#ffffff", padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = tk.Label(main_frame, text="Edit Profile Name", 
+                              font=("Arial", 14, "bold"), bg="#ffffff")
+        title_label.pack(pady=(0, 15))
+        
+        # Name input frame
+        input_frame = tk.Frame(main_frame, bg="#ffffff")
+        input_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        tk.Label(input_frame, text="Name:", font=("Arial", 11), 
+                bg="#ffffff").pack(side=tk.LEFT)
+        
+        name_var = tk.StringVar(value=self.profile_name)
+        name_entry = tk.Entry(input_frame, textvariable=name_var, 
+                             font=("Arial", 11), width=20)
+        name_entry.pack(side=tk.RIGHT)
+        name_entry.focus_set()
+        name_entry.select_range(0, tk.END)
         
         # Buttons frame
-        buttons_frame = tk.Frame(form_frame, bg="#ffffff")
-        buttons_frame.grid(row=len(fields), column=0, columnspan=2, pady=20)
+        buttons_frame = tk.Frame(main_frame, bg="#ffffff")
+        buttons_frame.pack()
+        
+        def save_profile():
+            new_name = name_var.get().strip()
+            if new_name:
+                self.profile_name = new_name
+                self.update_profile_display()
+                print(f"Profile name changed to: {new_name}")
+                dialog.destroy()
+            else:
+                tk.messagebox.showwarning("Invalid Name", "Please enter a valid name.")
+        
+        def cancel_profile():
+            dialog.destroy()
         
         # Save button
-        save_button = tk.Button(buttons_frame, text="Save Information",
-                               font=("Arial", 12, "bold"), bg="#2196F3", fg="white",
-                               width=15, height=1, command=self.save_form,
-                               relief="raised", bd=2)
-        save_button.pack(side="left", padx=10)
+        save_btn = tk.Button(buttons_frame, text="Save", command=save_profile,
+                            font=("Arial", 10, "bold"), bg="#2196F3", fg="white",
+                            width=8, relief="raised", bd=1)
+        save_btn.pack(side=tk.LEFT, padx=(0, 10))
         
-        # Clear button
-        clear_button = tk.Button(buttons_frame, text="Clear Form",
-                               font=("Arial", 12), bg="#f44336", fg="white",
-                               width=15, height=1, command=self.clear_form,
-                               relief="raised", bd=2)
-        clear_button.pack(side="left", padx=10)
-    
+        # Cancel button
+        cancel_btn = tk.Button(buttons_frame, text="Cancel", command=cancel_profile,
+                              font=("Arial", 10), bg="#f44336", fg="white",
+                              width=8, relief="raised", bd=1)
+        cancel_btn.pack(side=tk.LEFT)
         
+        # Handle Enter key to save
+        dialog.bind('<Return>', lambda e: save_profile())
+        dialog.bind('<Escape>', lambda e: cancel_profile())
+
+    def update_profile_display(self):
+        """Update the profile name display in the UI"""
+        # Update the profile label in the icons section if it exists
+        if hasattr(self, 'icons_frame'):
+            for widget in self.icons_frame.winfo_children():
+                if isinstance(widget, tk.Frame):
+                    for child in widget.winfo_children():
+                        if isinstance(child, tk.Label) and hasattr(child, 'cget'):
+                            if child.cget('text') != "👤":  # Not the icon, but the name label
+                                child.configure(text=self.profile_name)
+
     def open_settings(self):
         """Handle settings button click"""
         print("Opening settings page...")
-        # TODO: Implement navigation to settings page
-        tk.messagebox.showinfo("Settings", "Opening settings page...")
         
-    def open_profile(self):
-        """Handle profile button click"""
-        print("Opening profile page...")
-        # TODO: Implement navigation to profile page
-        tk.messagebox.showinfo("Profile", "Opening profile page...")
+        # Check if settings window is already open
+        if hasattr(self, 'settings_window') and self.settings_window.winfo_exists():
+            print("Settings window is already open")
+            self.settings_window.lift()  # Bring to front if already open
+            return
+        
+        # Create a new window for settings
+        self.settings_window = tk.Toplevel(self.root)
+        self.settings_app = ErgoScanSettings(self.settings_window)
+        
+        # Set up window close event
+        self.settings_window.protocol("WM_DELETE_WINDOW", self.on_settings_window_close)
         
     def save_form(self):
         """Handle form save"""
-        print("Saving patient information...")
+        print("Saving information...")
         # TODO: Implement actual data saving logic
-        tk.messagebox.showinfo("Success", "Patient information saved successfully!")
-        
-    def clear_form(self):
-        """Clear all form fields"""
-        print("Clearing patient information form...")
-        # TODO: Implement form clearing logic
-        tk.messagebox.showinfo("Cleared", "Form cleared successfully!")
-        
+        tk.messagebox.showinfo("Success", "Information saved successfully!")
+
     def on_closing(self):
         """Handle window closing"""
         if self.cap:
@@ -468,15 +500,30 @@ class MainScreen:
         # This could involve opening a new window or switching frames
         tk.messagebox.showinfo("Start Scanning", "Scanning Started")
 
-    def show_profile_options(self):
-        """Handle profile icon click"""
-        print("Profile options clicked")
-        tk.messagebox.showinfo("Profile", f"Profile: {self.profile_name}")
-
     def show_settings(self):
         """Handle settings icon click"""
-        print("Settings clicked")
-        tk.messagebox.showinfo("Settings", "Settings menu")
+        print("Opening settings...")
+        
+        # Check if settings window is already open
+        if hasattr(self, 'settings_window') and self.settings_window.winfo_exists():
+            print("Settings window is already open")
+            self.settings_window.lift()  # Bring to front if already open
+            return
+        
+        # Create a new window for settings
+        self.settings_window = tk.Toplevel(self.root)
+        self.settings_app = ErgoScanSettings(self.settings_window)
+        
+        # Set up window close event
+        self.settings_window.protocol("WM_DELETE_WINDOW", self.on_settings_window_close)
+    
+    def on_settings_window_close(self):
+        """Handle settings window closing"""
+        print("Settings window closing...")
+        
+        # Destroy the window
+        if hasattr(self, 'settings_window'):
+            self.settings_window.destroy()
 
     def toggle_camera(self):
         """Toggle camera on/off"""
