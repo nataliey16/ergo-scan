@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import cv2
 from PIL import Image, ImageTk
+from calibration_instructions import BodyCalibrationInstructions
 
 class MainScreen:
     # --- Initialize the main screen GUI ---
@@ -424,7 +425,41 @@ class MainScreen:
     def start_calibration(self):
         """Start calibration process"""
         print("Starting calibration...")
-        tk.messagebox.showinfo("Calibration", "Calibration started")
+        
+        # Check if camera is active before starting calibration
+        if not self.webcam_active:
+            tk.messagebox.showwarning("Camera Required", "Please turn the camera on before starting calibration.")
+            return
+        
+        # Check if calibration window is already open
+        if hasattr(self, 'calibration_window') and self.calibration_window.winfo_exists():
+            print("Calibration window is already open")
+            return
+        
+        # Create a new window for calibration instructions
+        self.calibration_window = tk.Toplevel(self.root)
+        self.calibration_app = BodyCalibrationInstructions(self.calibration_window)
+        
+        # Disable the calibration button while window is open
+        self.calibration_button.config(state="disabled")
+        
+        # Set up window close event to re-enable button
+        self.calibration_window.protocol("WM_DELETE_WINDOW", self.on_calibration_window_close)
+    
+    def on_calibration_window_close(self):
+        """Handle calibration window closing"""
+        print("Calibration window closing...")
+        
+        # Clean up calibration app resources if it has a camera
+        if hasattr(self.calibration_app, 'cap') and self.calibration_app.cap:
+            self.calibration_app.cap.release()
+        
+        # Destroy the window
+        if hasattr(self, 'calibration_window'):
+            self.calibration_window.destroy()
+        
+        # Re-enable the calibration button
+        self.calibration_button.config(state="normal")
         
     def start_scanning(self):
         """Handle start scanning button click"""
@@ -452,11 +487,6 @@ class MainScreen:
         else:
             self.cap = cv2.VideoCapture(0)
             print("Camera turned on")
-
-    def start_calibration(self):
-        """Start calibration process"""
-        print("Starting calibration...")
-        tk.messagebox.showinfo("Calibration", "Calibration started")
 
 
     # --- Class for Webcam ON/OFF iOS toggle switch look ---
