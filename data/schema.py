@@ -1,2 +1,0 @@
-# human-readable schema / constants
-
