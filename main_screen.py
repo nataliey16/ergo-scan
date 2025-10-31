@@ -130,6 +130,9 @@ class MainScreen:
             ("Leg Length (cm):", "85")
         ]
         
+        # Store entry widgets for measurement collection
+        self.measurement_entries = {}
+        
         for i, (label_text, default_value) in enumerate(fields):
             # Label
             label = tk.Label(form_frame, text=label_text, font=("Arial", 11, "bold"), 
@@ -140,14 +143,23 @@ class MainScreen:
             entry = tk.Entry(form_frame, font=("Arial", 10), relief="solid", bd=1)
             entry.grid(row=i, column=1, sticky="ew", pady=5)
             entry.insert(0, default_value)
+            
+            # Store entry for later access
+            measurement_name = label_text.replace(" (cm):", "").replace(" ", "_").lower()
+            self.measurement_entries[measurement_name] = entry
+            entry.insert(0, default_value)
         
-        # Submit button
-        submit_button = tk.Button(form_frame, text="Save Measurements",
+        # Button frame for multiple buttons
+        button_frame = tk.Frame(form_frame, bg="#ffffff")
+        button_frame.grid(row=len(fields), column=0, columnspan=2, pady=20)
+        
+        # Save Measurements button
+        save_button = tk.Button(button_frame, text="Save Measurements",
                                 font=("Arial", 12, "bold"), bg="#2196F3", fg="white",
                                 width=20, height=2, command=self.save_form,
                                 relief="raised", bd=2, activebackground="#1976D2",
                                 activeforeground="white", highlightthickness=0)
-        submit_button.grid(row=len(fields), column=0, columnspan=2, pady=20)
+        save_button.pack(side=tk.LEFT)
 
     def open_profile(self):
         """Handle profile button click - allows changing profile name"""
