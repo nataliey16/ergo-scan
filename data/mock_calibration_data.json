@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "user_id": null,
+  "pose_type": "t_pose",
+  "timestamp": "2025-10-30T22:00:00Z",
+  "raw_landmarks": {
+    "frame_count": 12,
+    "landmarks": [
+      {"name": "left_shoulder", "x": 0.34, "y": 0.45, "z": -0.02, "visibility": 0.98},
+      {"name": "right_shoulder", "x": 0.66, "y": 0.45, "z": -0.02, "visibility": 0.97},
+      {"name": "left_elbow", "x": 0.29, "y": 0.58, "z": -0.01, "visibility": 0.96},
+      {"name": "right_elbow", "x": 0.71, "y": 0.58, "z": -0.01, "visibility": 0.95}
+    ]
+  },
+  "measurements": {
+    "pixel_height": 800,
+    "scale_factor_cm_per_pixel": 0.218,
+    "shoulder_width_px": 325,
+    "shoulder_width_cm": 70.9,
+    "arm_length_px": 420,
+    "arm_length_cm": 91.6,
+    "baseline_angles": {
+      "neck_deg": 2.3,
+      "spine_deg": 1.2
+    }
+  },
+  "normalized": {
+    "landmarks_normalized": [
+      {"name": "left_shoulder", "x": -0.32, "y": 0.0, "z": 0.01},
+      {"name": "right_shoulder", "x": 0.32, "y": 0.0, "z": 0.01}
+    ]
+  },
+  "camera_meta": {
+    "resolution": [1280, 720],
+    "camera_distance_estimate_cm": 120.0
+  }
+}

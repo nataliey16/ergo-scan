@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CalibrationData",
+  "type": "object",
+  "required": ["version", "pose_type", "timestamp", "raw_landmarks", "measurements"],
+  "properties": {
+    "version": {"type": "string"},
+    "user_id": {"type": ["string", "null"]},
+    "pose_type": {"type": "string", "enum": ["t_pose", "standing", "seated"]},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "raw_landmarks": {
+      "type": "object",
+      "required": ["frame_count", "landmarks"],
+      "properties": {
+        "frame_count": {"type": "integer", "minimum": 1},
+        "landmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "x", "y", "z", "visibility"],
+            "properties": {
+              "name": {"type": "string"},
+              "x": {"type": "number"},
+              "y": {"type": "number"},
+              "z": {"type": "number"},
+              "visibility": {"type": "number", "minimum": 0, "maximum": 1}
+            }
+          }
+        }
+      }
+    },
+    "measurements": {
+      "type": "object",
+      "required": ["pixel_height", "scale_factor_cm_per_pixel"],
+      "properties": {
+        "pixel_height": {"type": "number"},
+        "scale_factor_cm_per_pixel": {"type": "number"},
+        "shoulder_width_px": {"type": "number"},
+        "shoulder_width_cm": {"type": "number"},
+        "arm_length_px": {"type": "number"},
+        "arm_length_cm": {"type": "number"},
+        "baseline_angles": {
+          "type": "object",
+          "properties": {
+            "neck_deg": {"type": "number"},
+            "spine_deg": {"type": "number"}
+          }
+        }
+      }
+    },
+    "normalized": {
+      "type": "object",
+      "properties": {
+        "landmarks_normalized": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "x": {"type": "number"},
+              "y": {"type": "number"},
+              "z": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    "camera_meta": {
+      "type": "object",
+      "properties": {
+        "resolution": {
+          "type": "array",
+          "items": {"type": "integer"},
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "camera_distance_estimate_cm": {"type": "number"}
+      }
+    }
+  }
+}
