@@ -19,20 +19,20 @@ except ImportError as e:
     print(f"❌ Import error: {e}")
     exit(1)
 
-def create_simple_pose() -> List[Tuple[float, float]]:
+def create_simple_pose() -> List[Tuple[float, float, float]]:
     """Create a simple standing pose for testing with proper MediaPipe indices"""
     # Create a pose with 33 landmarks (MediaPipe standard)
-    # Initialize all with default positions
-    landmarks = [(0.5, 0.5)] * 33
+    # Initialize all with default positions (x, y, z)
+    landmarks = [(0.5, 0.5, 0.02)] * 33
     
-    # Set key landmarks in their proper positions
-    landmarks[0] = (0.5, 0.1)    # nose
-    landmarks[11] = (0.4, 0.25)  # left_shoulder  
-    landmarks[12] = (0.6, 0.25)  # right_shoulder
-    landmarks[23] = (0.45, 0.75) # left_hip
-    landmarks[24] = (0.55, 0.75) # right_hip
-    landmarks[27] = (0.42, 1.0)  # left_ankle
-    landmarks[28] = (0.58, 1.0)  # right_ankle
+    # Set key landmarks in their proper positions with realistic Z depth
+    landmarks[0] = (0.5, 0.1, 0.05)    # nose
+    landmarks[11] = (0.4, 0.25, 0.02)  # left_shoulder  
+    landmarks[12] = (0.6, 0.25, 0.02)  # right_shoulder
+    landmarks[23] = (0.45, 0.75, 0.01) # left_hip
+    landmarks[24] = (0.55, 0.75, 0.01) # right_hip
+    landmarks[27] = (0.42, 1.0, 0.0)   # left_ankle
+    landmarks[28] = (0.58, 1.0, 0.0)   # right_ankle
     
     return landmarks
 
@@ -63,7 +63,7 @@ def test_normalize_landmarks():
         center = np.mean(coords, axis=0)
         
         print(f"   📏 Normalized height: {height:.3f}")
-        print(f"   📍 Center position: ({center[0]:.3f}, {center[1]:.3f})")
+        print(f"   📍 Center position: ({center[0]:.3f}, {center[1]:.3f}, {center[2]:.3f})")
         
         # Test that centering worked (center should be close to origin)
         if abs(center[0]) < 0.1 and abs(center[1]) < 0.1:
@@ -89,17 +89,18 @@ def test_rotation_correction():
     
     normalizer = DataNormalizer()
     
-    # Create tilted pose (rotate by 30 degrees)
+    # Create tilted pose (rotate around Z-axis by 30 degrees)
     raw_landmarks = create_simple_pose()
     angle = np.pi / 6  # 30 degrees
     cos_a, sin_a = np.cos(angle), np.sin(angle)
     
     tilted_landmarks = []
-    for x, y in raw_landmarks:
-        # Rotate around center point (0.5, 0.5)
+    for x, y, z in raw_landmarks:
+        # Rotate around center point (0.5, 0.5) in the Z-axis
         rotated_x = cos_a * (x - 0.5) - sin_a * (y - 0.5) + 0.5
         rotated_y = sin_a * (x - 0.5) + cos_a * (y - 0.5) + 0.5
-        tilted_landmarks.append((rotated_x, rotated_y))
+        # Z coordinate remains unchanged during Z-axis rotation
+        tilted_landmarks.append((rotated_x, rotated_y, z))
     
     try:
         # Normalize the tilted landmarks

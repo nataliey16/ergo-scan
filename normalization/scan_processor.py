@@ -181,6 +181,42 @@ class ErgoScanProcessor:
         
         return measurements
     
+    def normalize_pose_landmarks(self, landmarks, target_height: float = 1.0, 
+                                center_point: str = None) -> List[Tuple[float, float, float]]:
+        """
+        Normalize MediaPipe pose landmarks using the 3D landmark normalization
+        
+        Args:
+            landmarks: MediaPipe pose landmarks
+            target_height: Target height for normalization (default: 1.0)
+            center_point: Point to center on ('nose', 'chest', 'hip', or None for centroid)
+            
+        Returns:
+            List of normalized (x, y, z) coordinates
+        """
+        if not landmarks or not MEDIAPIPE_AVAILABLE:
+            return []
+        
+        try:
+            # Convert MediaPipe landmarks to 3D tuples
+            landmark_tuples = []
+            for landmark in landmarks:
+                # Use MediaPipe's normalized coordinates (0-1) and Z depth
+                landmark_tuples.append((landmark.x, landmark.y, landmark.z))
+            
+            # Apply the 3D landmark normalization
+            normalized_landmarks = self.normalizer.normalize_landmarks(
+                landmarks=landmark_tuples,
+                target_height=target_height,
+                center_point=center_point
+            )
+            
+            return normalized_landmarks
+            
+        except Exception as e:
+            print(f"Error normalizing pose landmarks: {e}")
+            return []
+    
     def process_frame(self, frame: np.ndarray, collect_measurements: bool = True) -> Tuple[np.ndarray, List[MeasurementPoint]]:
         """Process a single frame and extract measurements"""
         self.frame_count += 1

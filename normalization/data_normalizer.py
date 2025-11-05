@@ -434,22 +434,22 @@ class DataNormalizer:
         final_score = np.average(scores, weights=weights)
         return min(10.0, max(0.0, final_score))
     
-    def normalize_landmarks(self, landmarks: List[Tuple[float, float]], 
+    def normalize_landmarks(self, landmarks: List[Tuple[float, float, float]], 
                           reference_points: Optional[Dict[str, int]] = None,
                           target_height: float = 1.0,
-                          center_point: Optional[str] = None) -> List[Tuple[float, float]]:
+                          center_point: Optional[str] = None) -> List[Tuple[float, float, float]]:
         """
-        Normalize MediaPipe landmarks by centering, rotating, and scaling coordinates
+        Normalize MediaPipe landmarks by centering, rotating, and scaling coordinates in 3D space
         
         Args:
-            landmarks: List of (x, y) coordinate tuples from MediaPipe
+            landmarks: List of (x, y, z) coordinate tuples from MediaPipe
             reference_points: Dict mapping body part names to landmark indices
                              (e.g., {'nose': 0, 'left_shoulder': 11, 'right_shoulder': 12})
             target_height: Target height for scaling (default: 1.0 for normalized coords)
             center_point: Body part to use as center ('nose', 'chest', 'hip', or None for centroid)
         
         Returns:
-            List of normalized (x, y) coordinate tuples (centered, rotated, scaled)
+            List of normalized (x, y, z) coordinate tuples (centered, rotated, scaled)
         """
         if not landmarks or len(landmarks) < 2:
             return landmarks
@@ -497,35 +497,52 @@ class DataNormalizer:
         # Center the coordinates
         centered_coords = coords - center
         
-        # 2. ROTATION: Align body to vertical axis using shoulder line
+        # 2. ROTATION: Align body to standard orientation in 3D space
         left_shoulder_idx = reference_points.get('left_shoulder', 11)
         right_shoulder_idx = reference_points.get('right_shoulder', 12)
+        left_hip_idx = reference_points.get('left_hip', 23)
+        right_hip_idx = reference_points.get('right_hip', 24)
         
-        if (left_shoulder_idx < len(coords) and right_shoulder_idx < len(coords)):
-            # Calculate shoulder line angle
+        if (left_shoulder_idx < len(coords) and right_shoulder_idx < len(coords) and
+            left_hip_idx < len(coords) and right_hip_idx < len(coords)):
+            
+            # Get key body points after centering
             left_shoulder = centered_coords[left_shoulder_idx]
             right_shoulder = centered_coords[right_shoulder_idx]
+            left_hip = centered_coords[left_hip_idx]
+            right_hip = centered_coords[right_hip_idx]
+            
+            # Calculate shoulder and hip vectors
             shoulder_vector = right_shoulder - left_shoulder
+            hip_vector = right_hip - left_hip
             
-            # Calculate rotation angle to make shoulders horizontal
-            angle = np.arctan2(shoulder_vector[1], shoulder_vector[0])
+            # Calculate torso vector (from hips to shoulders)
+            torso_vector = (left_shoulder + right_shoulder) / 2 - (left_hip + right_hip) / 2
             
-            # Create rotation matrix
-            cos_angle = np.cos(-angle)
-            sin_angle = np.sin(-angle)
-            rotation_matrix = np.array([
-                [cos_angle, -sin_angle],
-                [sin_angle, cos_angle]
-            ])
+            # Create coordinate system using cross products
+            # X-axis: shoulder direction (left to right)
+            x_axis = shoulder_vector / np.linalg.norm(shoulder_vector) if np.linalg.norm(shoulder_vector) > 0 else np.array([1, 0, 0])
             
-            # Apply rotation
-            rotated_coords = np.dot(centered_coords, rotation_matrix.T)
+            # Y-axis: torso direction (hips to shoulders), orthogonalized to x_axis
+            y_axis_raw = torso_vector / np.linalg.norm(torso_vector) if np.linalg.norm(torso_vector) > 0 else np.array([0, 1, 0])
+            y_axis = y_axis_raw - np.dot(y_axis_raw, x_axis) * x_axis
+            y_axis = y_axis / np.linalg.norm(y_axis) if np.linalg.norm(y_axis) > 0 else np.array([0, 1, 0])
+            
+            # Z-axis: perpendicular to both (forward direction)
+            z_axis = np.cross(x_axis, y_axis)
+            z_axis = z_axis / np.linalg.norm(z_axis) if np.linalg.norm(z_axis) > 0 else np.array([0, 0, 1])
+            
+            # Create rotation matrix to align with standard axes
+            # Target: x=left-right, y=bottom-top, z=back-front
+            rotation_matrix = np.array([x_axis, y_axis, z_axis]).T
+            
+            # Apply rotation to align body with standard orientation
+            rotated_coords = np.dot(centered_coords, rotation_matrix)
         else:
-            # If shoulders not available, skip rotation
+            # If key landmarks not available, skip rotation
             rotated_coords = centered_coords
         
-        # 3. SCALING: Normalize based on body height
-        # Calculate current body height using head-to-foot distance
+        # 3. SCALING: Normalize based on body height in 3D
         nose_idx = reference_points.get('nose', 0)
         left_ankle_idx = reference_points.get('left_ankle', 27)
         right_ankle_idx = reference_points.get('right_ankle', 28)
@@ -533,21 +550,22 @@ class DataNormalizer:
         if nose_idx < len(rotated_coords):
             head_point = rotated_coords[nose_idx]
             
-            # Find the lowest foot point
+            # Find the lowest foot point (use Y coordinate for height)
             if (left_ankle_idx < len(rotated_coords) and right_ankle_idx < len(rotated_coords)):
                 left_ankle = rotated_coords[left_ankle_idx]
                 right_ankle = rotated_coords[right_ankle_idx]
-                foot_point = left_ankle if left_ankle[1] > right_ankle[1] else right_ankle
+                # Choose ankle with lower Y coordinate (after rotation, Y is vertical)
+                foot_point = left_ankle if left_ankle[1] < right_ankle[1] else right_ankle
             elif left_ankle_idx < len(rotated_coords):
                 foot_point = rotated_coords[left_ankle_idx]
             elif right_ankle_idx < len(rotated_coords):
                 foot_point = rotated_coords[right_ankle_idx]
             else:
-                # Fallback: use the point with maximum y-distance from head
-                distances = np.abs(rotated_coords[:, 1] - head_point[1])
-                foot_point = rotated_coords[np.argmax(distances)]
+                # Fallback: use the point with minimum y-coordinate
+                min_y_idx = np.argmin(rotated_coords[:, 1])
+                foot_point = rotated_coords[min_y_idx]
             
-            # Calculate current height
+            # Calculate current height (Y-axis difference after rotation)
             current_height = abs(head_point[1] - foot_point[1])
             
             if current_height > 0:
@@ -557,7 +575,7 @@ class DataNormalizer:
             else:
                 scaled_coords = rotated_coords
         else:
-            # If head not available, use overall bounding box for scaling
+            # If head not available, use overall Y-range for scaling
             y_range = np.max(rotated_coords[:, 1]) - np.min(rotated_coords[:, 1])
             if y_range > 0:
                 scale_factor = target_height / y_range
@@ -566,7 +584,7 @@ class DataNormalizer:
                 scaled_coords = rotated_coords
         
         # Convert back to list of tuples
-        normalized_landmarks = [(float(x), float(y)) for x, y in scaled_coords]
+        normalized_landmarks = [(float(x), float(y), float(z)) for x, y, z in scaled_coords]
         
         return normalized_landmarks
     

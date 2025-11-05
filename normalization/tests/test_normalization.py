@@ -203,61 +203,62 @@ def save_test_results(body_profile: BodyProfile, report: dict):
     except Exception as e:
         print(f"Error saving test results: {e}")
 
-def create_dummy_mediapipe_landmarks() -> List[Tuple[float, float]]:
-    """Create dummy MediaPipe pose landmarks for testing"""
+def create_dummy_mediapipe_landmarks() -> List[Tuple[float, float, float]]:
+    """Create dummy MediaPipe pose landmarks for testing with XYZ coordinates"""
     # MediaPipe pose has 33 landmarks, we'll create a basic standing pose
     landmarks = []
     
-    # Basic human pose landmarks (x, y coordinates in normalized space 0-1)
+    # Basic human pose landmarks (x, y, z coordinates in normalized space)
     # Simulating a person standing upright facing the camera
+    # x: left-right, y: top-bottom, z: depth (camera distance)
     
     # Face landmarks (0-10)
     landmarks.extend([
-        (0.5, 0.1),   # 0: nose
-        (0.48, 0.08), # 1: left_eye_inner
-        (0.47, 0.08), # 2: left_eye
-        (0.46, 0.08), # 3: left_eye_outer
-        (0.52, 0.08), # 4: right_eye_inner
-        (0.53, 0.08), # 5: right_eye
-        (0.54, 0.08), # 6: right_eye_outer
-        (0.45, 0.12), # 7: left_ear
-        (0.55, 0.12), # 8: right_ear
-        (0.47, 0.14), # 9: mouth_left
-        (0.53, 0.14), # 10: mouth_right
+        (0.5, 0.1, 0.0),   # 0: nose
+        (0.48, 0.08, 0.02), # 1: left_eye_inner
+        (0.47, 0.08, 0.01), # 2: left_eye
+        (0.46, 0.08, 0.03), # 3: left_eye_outer
+        (0.52, 0.08, 0.02), # 4: right_eye_inner
+        (0.53, 0.08, 0.01), # 5: right_eye
+        (0.54, 0.08, 0.03), # 6: right_eye_outer
+        (0.45, 0.12, 0.05), # 7: left_ear
+        (0.55, 0.12, 0.05), # 8: right_ear
+        (0.47, 0.14, 0.01), # 9: mouth_left
+        (0.53, 0.14, 0.01), # 10: mouth_right
     ])
     
     # Upper body landmarks (11-16)
     landmarks.extend([
-        (0.4, 0.25),  # 11: left_shoulder
-        (0.6, 0.25),  # 12: right_shoulder
-        (0.35, 0.45), # 13: left_elbow
-        (0.65, 0.45), # 14: right_elbow
-        (0.32, 0.65), # 15: left_wrist
-        (0.68, 0.65), # 16: right_wrist
+        (0.4, 0.25, 0.02),  # 11: left_shoulder
+        (0.6, 0.25, 0.02),  # 12: right_shoulder
+        (0.35, 0.45, 0.05), # 13: left_elbow
+        (0.65, 0.45, 0.05), # 14: right_elbow
+        (0.32, 0.65, 0.08), # 15: left_wrist
+        (0.68, 0.65, 0.08), # 16: right_wrist
     ])
     
     # Hand landmarks (17-22)
     landmarks.extend([
-        (0.31, 0.67), # 17: left_pinky
-        (0.30, 0.66), # 18: left_index
-        (0.315, 0.665), # 19: left_thumb
-        (0.69, 0.67), # 20: right_pinky
-        (0.70, 0.66), # 21: right_index
-        (0.685, 0.665), # 22: right_thumb
+        (0.31, 0.67, 0.10), # 17: left_pinky
+        (0.30, 0.66, 0.09), # 18: left_index
+        (0.315, 0.665, 0.09), # 19: left_thumb
+        (0.69, 0.67, 0.10), # 20: right_pinky
+        (0.70, 0.66, 0.09), # 21: right_index
+        (0.685, 0.665, 0.09), # 22: right_thumb
     ])
     
     # Lower body landmarks (23-32)
     landmarks.extend([
-        (0.45, 0.75), # 23: left_hip
-        (0.55, 0.75), # 24: right_hip
-        (0.43, 0.9),  # 25: left_knee
-        (0.57, 0.9),  # 26: right_knee
-        (0.42, 1.05), # 27: left_ankle
-        (0.58, 1.05), # 28: right_ankle
-        (0.41, 1.08), # 29: left_heel
-        (0.59, 1.08), # 30: right_heel
-        (0.415, 1.1), # 31: left_foot_index
-        (0.585, 1.1), # 32: right_foot_index
+        (0.45, 0.75, 0.01), # 23: left_hip
+        (0.55, 0.75, 0.01), # 24: right_hip
+        (0.43, 0.9, 0.03),  # 25: left_knee
+        (0.57, 0.9, 0.03),  # 26: right_knee
+        (0.42, 1.05, 0.05), # 27: left_ankle
+        (0.58, 1.05, 0.05), # 28: right_ankle
+        (0.41, 1.08, 0.06), # 29: left_heel
+        (0.59, 1.08, 0.06), # 30: right_heel
+        (0.415, 1.1, 0.07), # 31: left_foot_index
+        (0.585, 1.1, 0.07), # 32: right_foot_index
     ])
     
     return landmarks
@@ -298,19 +299,33 @@ def test_landmark_normalization():
             # Calculate statistics about the normalized landmarks
             coords = np.array(normalized)
             
-            # Calculate bounding box
-            min_x, min_y = np.min(coords, axis=0)
-            max_x, max_y = np.max(coords, axis=0)
-            width = max_x - min_x
-            height = max_y - min_y
+            # Calculate bounding box for 3D coordinates
+            min_coords = np.min(coords, axis=0)
+            max_coords = np.max(coords, axis=0)
             
-            # Calculate center
-            center_x, center_y = np.mean(coords, axis=0)
-            
-            print(f"{i}. {test_case['name']}:")
-            print(f"   Bounding box: ({min_x:.3f}, {min_y:.3f}) to ({max_x:.3f}, {max_y:.3f})")
-            print(f"   Dimensions: {width:.3f} × {height:.3f}")
-            print(f"   Center: ({center_x:.3f}, {center_y:.3f})")
+            if coords.shape[1] == 3:  # 3D coordinates
+                min_x, min_y, min_z = min_coords
+                max_x, max_y, max_z = max_coords
+                width = max_x - min_x
+                height = max_y - min_y
+                depth = max_z - min_z
+                center_x, center_y, center_z = np.mean(coords, axis=0)
+                
+                print(f"{i}. {test_case['name']}:")
+                print(f"   Bounding box: ({min_x:.3f}, {min_y:.3f}, {min_z:.3f}) to ({max_x:.3f}, {max_y:.3f}, {max_z:.3f})")
+                print(f"   Dimensions: {width:.3f} × {height:.3f} × {depth:.3f}")
+                print(f"   Center: ({center_x:.3f}, {center_y:.3f}, {center_z:.3f})")
+            else:  # 2D coordinates (fallback)
+                min_x, min_y = min_coords
+                max_x, max_y = max_coords
+                width = max_x - min_x
+                height = max_y - min_y
+                center_x, center_y = np.mean(coords, axis=0)
+                
+                print(f"{i}. {test_case['name']}:")
+                print(f"   Bounding box: ({min_x:.3f}, {min_y:.3f}) to ({max_x:.3f}, {max_y:.3f})")
+                print(f"   Dimensions: {width:.3f} × {height:.3f}")
+                print(f"   Center: ({center_x:.3f}, {center_y:.3f})")
             
             # Check that scaling worked correctly
             expected_height = test_case["target_height"]
@@ -327,15 +342,23 @@ def test_landmark_normalization():
     print("\nTesting rotation correction:")
     print("-" * 40)
     
-    # Create tilted landmarks by rotating the original ones
-    rotation_angle = np.pi / 6  # 30 degrees
+    # Create tilted landmarks by rotating the original ones in 3D space
+    rotation_angle = np.pi / 6  # 30 degrees around Z-axis
     cos_a, sin_a = np.cos(rotation_angle), np.sin(rotation_angle)
-    rotation_matrix = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
+    # 3D rotation matrix around Z-axis
+    rotation_matrix_3d = np.array([
+        [cos_a, -sin_a, 0],
+        [sin_a, cos_a, 0],
+        [0, 0, 1]
+    ])
     
     tilted_landmarks = []
-    for x, y in raw_landmarks:
-        rotated = np.dot(rotation_matrix, [x - 0.5, y - 0.5]) + [0.5, 0.5]
-        tilted_landmarks.append((rotated[0], rotated[1]))
+    for x, y, z in raw_landmarks:
+        # Center, rotate, then restore
+        centered_point = np.array([x - 0.5, y - 0.5, z])
+        rotated_point = np.dot(rotation_matrix_3d, centered_point)
+        final_point = rotated_point + [0.5, 0.5, 0]
+        tilted_landmarks.append((final_point[0], final_point[1], final_point[2]))
     
     try:
         # Normalize the tilted landmarks
@@ -344,6 +367,8 @@ def test_landmark_normalization():
         # Check shoulder alignment (should be close to horizontal after normalization)
         left_shoulder = corrected[11]   # left_shoulder index
         right_shoulder = corrected[12]  # right_shoulder index
+        
+        # Calculate shoulder angle in XY plane (after 3D normalization)
         shoulder_angle = np.arctan2(
             right_shoulder[1] - left_shoulder[1],
             right_shoulder[0] - left_shoulder[0]
