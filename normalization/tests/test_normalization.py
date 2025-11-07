@@ -1,20 +1,36 @@
 """
-Test script for ErgoScan Data Normalization & Refinement integration
-Tests the data processing pipeline with sample data
+ErgoScan Normalization - Legacy Test Module
+
+This module contains the original test functions for backward compatibility.
+For comprehensive testing, use test_suite.py instead.
+
+Usage:
+    python normalization/tests/test_normalization.py
+    
+Note: This module is deprecated. Use test_suite.py for new development.
 """
 
-import numpy as np
-import time
 import json
-import sys
 import os
+import sys
+import time
+import warnings
 from typing import List, Tuple
+
+import numpy as np
 
 # Add project root to path to import normalization package
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
 from normalization import DataNormalizer, MeasurementPoint, BodyProfile
+
+# Issue deprecation warning
+warnings.warn(
+    "This test module is deprecated. Use test_suite.py for comprehensive testing.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 def generate_sample_measurements(num_frames: int = 50) -> list:
     """Generate realistic sample measurements for testing"""
@@ -276,6 +292,59 @@ def test_landmark_normalization():
     raw_landmarks = create_dummy_mediapipe_landmarks()
     print(f"Created {len(raw_landmarks)} dummy MediaPipe landmarks")
     
+    # Display input landmark information
+    print("\n📥 INPUT LANDMARK ANALYSIS:")
+    print("-" * 40)
+    
+    # Convert to numpy array for analysis
+    coords = np.array(raw_landmarks)
+    
+    # Calculate input statistics
+    input_height = np.max(coords[:, 1]) - np.min(coords[:, 1])
+    input_center = np.mean(coords, axis=0)
+    input_bbox_min = np.min(coords, axis=0)
+    input_bbox_max = np.max(coords, axis=0)
+    input_dimensions = input_bbox_max - input_bbox_min
+    
+    print(f"Raw landmark statistics:")
+    print(f"   📏 Original height: {input_height:.3f}")
+    print(f"   📍 Original center: ({input_center[0]:.3f}, {input_center[1]:.3f}, {input_center[2]:.3f})")
+    print(f"   📦 Original bounding box: ({input_bbox_min[0]:.3f}, {input_bbox_min[1]:.3f}, {input_bbox_min[2]:.3f}) to ({input_bbox_max[0]:.3f}, {input_bbox_max[1]:.3f}, {input_bbox_max[2]:.3f})")
+    print(f"   📐 Original dimensions: {input_dimensions[0]:.3f} × {input_dimensions[1]:.3f} × {input_dimensions[2]:.3f}")
+    
+    # Show key landmark positions
+    key_landmarks = {
+        'Nose': coords[0],
+        'Left Shoulder': coords[11],
+        'Right Shoulder': coords[12], 
+        'Left Hip': coords[23],
+        'Right Hip': coords[24],
+        'Left Ankle': coords[27],
+        'Right Ankle': coords[28]
+    }
+    
+    print(f"\nKey landmark positions (x, y, z):")
+    for name, pos in key_landmarks.items():
+        print(f"   {name:12}: ({pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f})")
+    
+    # Calculate shoulder and hip angles in input data
+    left_shoulder, right_shoulder = coords[11], coords[12]
+    left_hip, right_hip = coords[23], coords[24]
+    
+    shoulder_angle = np.arctan2(
+        right_shoulder[1] - left_shoulder[1],
+        right_shoulder[0] - left_shoulder[0]
+    )
+    
+    hip_angle = np.arctan2(
+        right_hip[1] - left_hip[1], 
+        right_hip[0] - left_hip[0]
+    )
+    
+    print(f"\nPosture analysis:")
+    print(f"   🔄 Shoulder tilt: {np.degrees(shoulder_angle):.1f}°")
+    print(f"   🔄 Hip tilt: {np.degrees(hip_angle):.1f}°")
+    
     # Test different normalization options
     test_cases = [
         {"center_point": None, "target_height": 1.0, "name": "Default (centroid center)"},
@@ -285,7 +354,7 @@ def test_landmark_normalization():
         {"center_point": None, "target_height": 2.0, "name": "Scaled to height 2.0"},
     ]
     
-    print("\nTesting normalization configurations:")
+    print(f"\n📤 NORMALIZATION RESULTS:")
     print("-" * 40)
     
     for i, test_case in enumerate(test_cases, 1):
@@ -296,10 +365,52 @@ def test_landmark_normalization():
                 target_height=test_case["target_height"]
             )
             
-            # Calculate statistics about the normalized landmarks
+            # Display the normalized landmarks
             coords = np.array(normalized)
             
-            # Calculate bounding box for 3D coordinates
+            print(f"{i}. {test_case['name']}:")
+            print(f"   📍 NORMALIZED LANDMARKS (Key Points):")
+            
+            # Show key normalized landmark positions
+            key_landmarks = {
+                'Nose': coords[0] if len(coords) > 0 else None,
+                'Left Shoulder': coords[11] if len(coords) > 11 else None,
+                'Right Shoulder': coords[12] if len(coords) > 12 else None,
+                'Left Hip': coords[23] if len(coords) > 23 else None,
+                'Right Hip': coords[24] if len(coords) > 24 else None,
+                'Left Ankle': coords[27] if len(coords) > 27 else None,
+                'Right Ankle': coords[28] if len(coords) > 28 else None
+            }
+            
+            for name, pos in key_landmarks.items():
+                if pos is not None:
+                    if len(pos) == 3:  # 3D coordinates
+                        print(f"      {name:12}: ({pos[0]:7.3f}, {pos[1]:7.3f}, {pos[2]:7.3f})")
+                    else:  # 2D coordinates (fallback)
+                        print(f"      {name:12}: ({pos[0]:7.3f}, {pos[1]:7.3f})")
+            
+            # Option to show all landmarks (uncomment to enable full output)
+            show_all_landmarks = False  # Set to True to see all 33 landmarks
+            if show_all_landmarks:
+                print(f"   📋 ALL NORMALIZED LANDMARKS:")
+                landmark_names = [
+                    "nose", "left_eye_inner", "left_eye", "left_eye_outer",
+                    "right_eye_inner", "right_eye", "right_eye_outer", "left_ear", 
+                    "right_ear", "mouth_left", "mouth_right", "left_shoulder",
+                    "right_shoulder", "left_elbow", "right_elbow", "left_wrist",
+                    "right_wrist", "left_pinky", "right_pinky", "left_index",
+                    "right_index", "left_thumb", "right_thumb", "left_hip",
+                    "right_hip", "left_knee", "right_knee", "left_ankle",
+                    "right_ankle", "left_heel", "right_heel", "left_foot_index",
+                    "right_foot_index"
+                ]
+                for idx, (name, pos) in enumerate(zip(landmark_names, coords)):
+                    if len(pos) == 3:  # 3D coordinates
+                        print(f"      {idx:2d}. {name:15}: ({pos[0]:7.3f}, {pos[1]:7.3f}, {pos[2]:7.3f})")
+                    else:  # 2D coordinates
+                        print(f"      {idx:2d}. {name:15}: ({pos[0]:7.3f}, {pos[1]:7.3f})")
+            
+            # Calculate summary statistics
             min_coords = np.min(coords, axis=0)
             max_coords = np.max(coords, axis=0)
             
@@ -311,10 +422,9 @@ def test_landmark_normalization():
                 depth = max_z - min_z
                 center_x, center_y, center_z = np.mean(coords, axis=0)
                 
-                print(f"{i}. {test_case['name']}:")
-                print(f"   Bounding box: ({min_x:.3f}, {min_y:.3f}, {min_z:.3f}) to ({max_x:.3f}, {max_y:.3f}, {max_z:.3f})")
-                print(f"   Dimensions: {width:.3f} × {height:.3f} × {depth:.3f}")
-                print(f"   Center: ({center_x:.3f}, {center_y:.3f}, {center_z:.3f})")
+                print(f"   📦 Bounding box: ({min_x:.3f}, {min_y:.3f}, {min_z:.3f}) to ({max_x:.3f}, {max_y:.3f}, {max_z:.3f})")
+                print(f"   📐 Dimensions: {width:.3f} × {height:.3f} × {depth:.3f}")
+                print(f"   🎯 Center: ({center_x:.3f}, {center_y:.3f}, {center_z:.3f})")
             else:  # 2D coordinates (fallback)
                 min_x, min_y = min_coords
                 max_x, max_y = max_coords
@@ -322,18 +432,18 @@ def test_landmark_normalization():
                 height = max_y - min_y
                 center_x, center_y = np.mean(coords, axis=0)
                 
-                print(f"{i}. {test_case['name']}:")
-                print(f"   Bounding box: ({min_x:.3f}, {min_y:.3f}) to ({max_x:.3f}, {max_y:.3f})")
-                print(f"   Dimensions: {width:.3f} × {height:.3f}")
-                print(f"   Center: ({center_x:.3f}, {center_y:.3f})")
+                print(f"   📦 Bounding box: ({min_x:.3f}, {min_y:.3f}) to ({max_x:.3f}, {max_y:.3f})")
+                print(f"   📐 Dimensions: {width:.3f} × {height:.3f}")
+                print(f"   🎯 Center: ({center_x:.3f}, {center_y:.3f})")
             
             # Check that scaling worked correctly
             expected_height = test_case["target_height"]
-            height_error = abs(height - expected_height)
+            actual_height = height if coords.shape[1] >= 2 else 0
+            height_error = abs(actual_height - expected_height)
             if height_error < 0.1:  # Allow 10% error tolerance
-                print(f"   ✅ Height scaling: {height:.3f} (target: {expected_height})")
+                print(f"   ✅ Height scaling: {actual_height:.3f} (target: {expected_height})")
             else:
-                print(f"   ⚠️  Height scaling: {height:.3f} (target: {expected_height}, error: {height_error:.3f})")
+                print(f"   ⚠️  Height scaling: {actual_height:.3f} (target: {expected_height}, error: {height_error:.3f})")
             
         except Exception as e:
             print(f"{i}. {test_case['name']}: ❌ Error - {e}")

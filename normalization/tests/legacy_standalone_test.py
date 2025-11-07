@@ -9,11 +9,11 @@ import os
 import numpy as np
 from typing import List, Tuple
 
-# Add current directory to path
-sys.path.append('.')
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from normalization import DataNormalizer
+    from data_normalizer import DataNormalizer
     print("✅ DataNormalizer imported successfully")
 except ImportError as e:
     print(f"❌ Import error: {e}")
@@ -64,6 +64,21 @@ def test_normalize_landmarks():
         
         print(f"   📏 Normalized height: {height:.3f}")
         print(f"   📍 Center position: ({center[0]:.3f}, {center[1]:.3f}, {center[2]:.3f})")
+        
+        # Show key normalized landmarks
+        print(f"   📍 Key normalized landmarks:")
+        key_landmarks = {
+            'Nose': coords[0],
+            'Left Shoulder': coords[11],
+            'Right Shoulder': coords[12], 
+            'Left Hip': coords[23],
+            'Right Hip': coords[24],
+            'Left Ankle': coords[27],
+            'Right Ankle': coords[28]
+        }
+        
+        for name, pos in key_landmarks.items():
+            print(f"      {name:12}: ({pos[0]:7.3f}, {pos[1]:7.3f}, {pos[2]:7.3f})")
         
         # Test that centering worked (center should be close to origin)
         if abs(center[0]) < 0.1 and abs(center[1]) < 0.1:

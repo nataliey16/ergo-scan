@@ -1,26 +1,32 @@
 """
 ErgoScan Data Normalization & Refinement Module
-Step 3: Clean, normalize, and validate computed data for consistent measurement accuracy
 
-This module handles:
-- Outlier detection and removal
-- Multi-frame measurement averaging  
-- Camera distance corrections
-- Calibration standard applications
-- Data validation and quality assurance
-- MediaPipe landmark normalization
+A comprehensive data processing system for accurate body measurements from pose estimation.
+
+This module provides:
+- Outlier detection and removal for measurement data
+- Multi-frame temporal smoothing and averaging
+- Camera distance and calibration corrections
+- Data validation and quality scoring
+- 3D MediaPipe landmark normalization with centering, rotation, and scaling
+- Comprehensive body profile generation and validation
+
+Author: ErgoScan Team
+Version: 2.0.0 (3D Enhanced)
 """
 
-import numpy as np
 import json
 import time
-from typing import List, Dict, Tuple, Optional, Any
-from dataclasses import dataclass, asdict
-from scipy import stats
-from collections import deque
 import warnings
+from collections import deque
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
-warnings.filterwarnings('ignore')
+import numpy as np
+from scipy import stats
+
+# Suppress non-critical warnings for cleaner output
+warnings.filterwarnings('ignore', category=RuntimeWarning)
 
 @dataclass
 class MeasurementPoint:
