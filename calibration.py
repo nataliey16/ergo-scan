@@ -17,6 +17,18 @@ POSES = [
     {"name": "Seated Neutral", "instruction": "Sit comfortably with your back straight and feet flat."}
 ]
 
+# MediaPipe pose landmark names
+POSE_LANDMARKS = [
+    "nose", "left_eye_inner", "left_eye", "left_eye_outer", "right_eye_inner", "right_eye",
+    "right_eye_outer", "left_ear", "right_ear", "mouth_left", "mouth_right",
+    "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+    "left_wrist", "right_wrist", "left_pinky", "right_pinky",
+    "left_index", "right_index", "left_thumb", "right_thumb",
+    "left_hip", "right_hip", "left_knee", "right_knee",
+    "left_ankle", "right_ankle", "left_heel", "right_heel",
+    "left_foot_index", "right_foot_index"
+]
+
 FULL_BODY_VISIBLE_THRESHOLD = 0.9
 FULL_BODY_HOLD_TIME = 2
 COUNTDOWN_TIME = 10
@@ -30,7 +42,7 @@ class BodyCalibrationInstructions:
         self.root.geometry("800x700")
         self.root.configure(bg="white")
 
-        # Store pose detection setup variables
+        # Pose detection setup
         self.cap = None
         self.pose_detector = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
         self.running = False
@@ -39,7 +51,7 @@ class BodyCalibrationInstructions:
         self.countdown_start_time = None
         self.calibration_data = {}
 
-        # Initialize first page (pre-calibration instructions)
+        # Start with instruction page
         self.show_instructions_page()
 
     # ---------------------------
@@ -101,7 +113,6 @@ class BodyCalibrationInstructions:
     def show_calibration_page(self):
         self.clear_window()
 
-        # Title
         self.title_label = tk.Label(
             self.root,
             text="Ergo Scan Body Calibration",
@@ -113,11 +124,9 @@ class BodyCalibrationInstructions:
         )
         self.title_label.pack(side="top", pady=(20, 0))
 
-        # Video feed
         self.video_label = tk.Label(self.root, bg="black")
         self.video_label.pack(pady=10)
 
-        # Instruction label
         self.instruction_text = tk.StringVar()
         self.instruction_label = tk.Label(
             self.root,
@@ -130,7 +139,6 @@ class BodyCalibrationInstructions:
         )
         self.instruction_label.pack(pady=5)
 
-        # Countdown label
         self.countdown_text = tk.StringVar()
         self.countdown_label = tk.Label(
             self.root,
@@ -141,7 +149,6 @@ class BodyCalibrationInstructions:
         )
         self.countdown_label.pack(pady=5)
 
-        # Start button
         self.start_button = tk.Button(
             self.root,
             text="Start Calibration",
@@ -161,7 +168,7 @@ class BodyCalibrationInstructions:
         Thread(target=self.run_camera, daemon=True).start()
 
     # ---------------------------
-    # CAMERA CALIBRATION LOOP
+    # CAMERA LOOP
     # ---------------------------
     def run_camera(self):
         self.cap = cv2.VideoCapture(0)
@@ -178,7 +185,6 @@ class BodyCalibrationInstructions:
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = self.pose_detector.process(rgb_frame)
 
-            # Draw pose landmarks
             if results.pose_landmarks:
                 mp_drawing.draw_landmarks(
                     frame,
@@ -188,14 +194,13 @@ class BodyCalibrationInstructions:
                     mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2)
                 )
 
-            # Convert to ImageTk
             img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (640, 480))
             imgtk = ImageTk.PhotoImage(image=Image.fromarray(img))
             self.video_label.imgtk = imgtk
             self.video_label.configure(image=imgtk)
 
-            # Check if full body is visible
+            # Visibility check
             if results.pose_landmarks:
                 landmarks = results.pose_landmarks.landmark
                 avg_visibility = sum(lm.visibility for lm in landmarks) / len(landmarks)
@@ -215,7 +220,7 @@ class BodyCalibrationInstructions:
                 self.visible_start_time = None
                 self.countdown_start_time = None
 
-            # Countdown + Capture
+            # Countdown
             if self.countdown_start_time:
                 elapsed = time.time() - self.countdown_start_time
                 remaining = int(COUNTDOWN_TIME - elapsed)
@@ -226,16 +231,22 @@ class BodyCalibrationInstructions:
                         f"{POSES[self.current_pose_index]['instruction']}"
                     )
                 else:
-                    # Save pose landmarks
-                    landmarks_data = [
-                        {"x": lm.x, "y": lm.y, "z": lm.z, "visibility": lm.visibility}
-                        for lm in results.pose_landmarks.landmark
-                    ]
-                    self.calibration_data[POSES[self.current_pose_index]['name']] = landmarks_data
+                    # Save pose landmarks with names
+                    labeled_landmarks = {
+                        POSE_LANDMARKS[i]: {
+                            "x": lm.x,
+                            "y": lm.y,
+                            "z": lm.z,
+                            "visibility": lm.visibility
+                        }
+                        for i, lm in enumerate(results.pose_landmarks.landmark)
+                    }
+
+                    self.calibration_data[POSES[self.current_pose_index]['name']] = labeled_landmarks
                     with open(OUTPUT_FILE, "w") as f:
                         json.dump(self.calibration_data, f, indent=4)
 
-                    # Next pose
+                    # Move to next pose
                     self.current_pose_index += 1
                     self.visible_start_time = None
                     self.countdown_start_time = None
@@ -248,7 +259,7 @@ class BodyCalibrationInstructions:
                         )
                     continue
 
-            # Update instructions
+            # Default instruction
             if not self.countdown_start_time and self.current_pose_index < len(POSES):
                 self.instruction_text.set(
                     f"Position yourself for {POSES[self.current_pose_index]['name']}:\n"
@@ -258,7 +269,7 @@ class BodyCalibrationInstructions:
 
             self.root.update()
 
-        # Finish
+        # End calibration
         self.running = False
         if self.cap:
             self.cap.release()
@@ -269,7 +280,6 @@ class BodyCalibrationInstructions:
         messagebox.showinfo("Calibration Done", f"Calibration complete. Data saved to {OUTPUT_FILE}.")
         self.start_button.config(state=tk.NORMAL)
 
-    # Utility: clear the window before switching views
     def clear_window(self):
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -278,5 +288,5 @@ class BodyCalibrationInstructions:
 # Run the Tkinter app
 if __name__ == "__main__":
     root = tk.Tk()
-    app = CalibrationApp(root)
+    app = BodyCalibrationInstructions(root)
     root.mainloop()
