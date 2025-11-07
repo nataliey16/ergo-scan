@@ -136,6 +136,22 @@ def validate_calibration_data(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     meas = data.get("measurements")
     if meas and not isinstance(meas, dict):
         errors.append("measurements must be a dict")
+    else:
+        # If present, ensure known numeric measurement fields are numbers
+        if isinstance(meas, dict):
+            numeric_fields = [
+                "pixel_height",
+                "scale_factor_cm_per_pixel",
+                "shoulder_width_px",
+                "shoulder_width_cm",
+                "arm_length_px",
+                "arm_length_cm",
+                "leg_length_px",
+                "leg_length_cm",
+            ]
+            for f in numeric_fields:
+                if f in meas and not isinstance(meas[f], (int, float)):
+                    errors.append(f"measurements.{f} must be a number")
 
     # camera_meta must be a dict
     cam = data.get("camera_meta")

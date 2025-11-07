@@ -39,6 +39,8 @@
         "shoulder_width_cm": {"type": "number"},
         "arm_length_px": {"type": "number"},
         "arm_length_cm": {"type": "number"},
+            "leg_length_px": {"type": "number"},
+            "leg_length_cm": {"type": "number"},
         "baseline_angles": {
           "type": "object",
           "properties": {
