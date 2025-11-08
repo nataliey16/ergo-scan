@@ -277,8 +277,102 @@ class BodyCalibrationInstructions:
         self.video_label.configure(image='')
         self.instruction_text.set("Calibration complete! All poses captured.")
         self.countdown_text.set("")
-        messagebox.showinfo("Calibration Done", f"Calibration complete. Data saved to {OUTPUT_FILE}.")
+        
+        # Process calibration data through normalization system
+        self.process_calibration_with_normalization()
+        
+        messagebox.showinfo("Calibration Done", f"Calibration complete. Data saved to {OUTPUT_FILE}.\nNormalized results displayed in terminal.")
         self.start_button.config(state=tk.NORMAL)
+
+    def process_calibration_with_normalization(self):
+        """Process the completed calibration data through the normalization system."""
+        try:
+            # Import the integration components
+            import sys
+            import os
+            sys.path.append(os.path.join(os.path.dirname(__file__), 'normalization'))
+            from data_normalizer import DataNormalizer
+            
+            print("\n" + "="*60)
+            print("🎯 PROCESSING CALIBRATION DATA THROUGH NORMALIZATION")
+            print("="*60)
+            
+            # Create normalizer instance
+            normalizer = DataNormalizer()
+            print("🔧 Created DataNormalizer instance")
+            
+            # Process each pose
+            for pose_name, pose_data in self.calibration_data.items():
+                print(f"\n{'─'*40}")
+                print(f"🧍 Processing: {pose_name}")
+                print(f"{'─'*40}")
+                
+                # Extract landmarks and names
+                landmarks = []
+                landmark_names = []
+                
+                for landmark_name, data in pose_data.items():
+                    if 'x' in data and 'y' in data and 'z' in data:
+                        x, y, z = data['x'], data['y'], data['z']
+                        landmarks.append((x, y, z))
+                        landmark_names.append(landmark_name)
+                
+                if landmarks:
+                    print(f"📊 Original {pose_name}: {len(landmarks)} landmarks")
+                    
+                    # Calculate original ranges
+                    x_coords = [pt[0] for pt in landmarks]
+                    y_coords = [pt[1] for pt in landmarks]
+                    z_coords = [pt[2] for pt in landmarks]
+                    
+                    print(f"   • X range: [{min(x_coords):.3f}, {max(x_coords):.3f}]")
+                    print(f"   • Y range: [{min(y_coords):.3f}, {max(y_coords):.3f}]")
+                    print(f"   • Z range: [{min(z_coords):.3f}, {max(z_coords):.3f}]")
+                    
+                    # Normalize the landmarks
+                    print(f"\n🔧 Normalizing {len(landmarks)} landmarks...")
+                    normalized = normalizer.normalize_landmarks(landmarks)
+                    
+                    if normalized:
+                        print(f"✅ Normalization successful!")
+                        
+                        # Display normalized results
+                        print(f"\n🎯 {pose_name} - Normalized Results:")
+                        print(f"   • Landmarks processed: {len(normalized)}")
+                        
+                        # Calculate normalized statistics
+                        norm_x = [pt[0] for pt in normalized]
+                        norm_y = [pt[1] for pt in normalized]
+                        norm_z = [pt[2] for pt in normalized]
+                        
+                        print(f"   • X range: [{min(norm_x):.3f}, {max(norm_x):.3f}]")
+                        print(f"   • Y range: [{min(norm_y):.3f}, {max(norm_y):.3f}]")
+                        print(f"   • Z range: [{min(norm_z):.3f}, {max(norm_z):.3f}]")
+                        
+                        # Calculate and display center of mass
+                        center_x = sum(norm_x) / len(norm_x)
+                        center_y = sum(norm_y) / len(norm_y)
+                        center_z = sum(norm_z) / len(norm_z)
+                        print(f"   • Center of mass: ({center_x:.3f}, {center_y:.3f}, {center_z:.3f})")
+                        
+                        # Display individual landmarks with names
+                        print("   • Individual normalized landmarks:")
+                        for i, (x, y, z) in enumerate(normalized):
+                            if i < len(landmark_names):
+                                name = landmark_names[i]
+                                formatted_name = name.replace('_', ' ').title()
+                                print(f"     {formatted_name:<20} ({x:6.3f}, {y:6.3f}, {z:6.3f})")
+                    else:
+                        print(f"❌ Normalization failed for {pose_name}")
+                else:
+                    print(f"❌ No valid landmarks found for {pose_name}")
+            
+            print(f"\n🏁 Calibration normalization processing completed!")
+            
+        except Exception as e:
+            print(f"❌ Error processing calibration data: {e}")
+            import traceback
+            print(f"📝 Error details: {traceback.format_exc()}")
 
     def clear_window(self):
         for widget in self.root.winfo_children():
