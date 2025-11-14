@@ -21,6 +21,8 @@
     "arm_length_cm": 91.6,
       "leg_length_px": 390,
       "leg_length_cm": 85.02,
+      "torso_length_px": 210,
+      "torso_length_cm": 45.78,
     "baseline_angles": {
       "neck_deg": 2.3,
       "spine_deg": 1.2

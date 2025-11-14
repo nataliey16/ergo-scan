@@ -37,10 +37,12 @@
         "scale_factor_cm_per_pixel": {"type": "number"},
         "shoulder_width_px": {"type": "number"},
         "shoulder_width_cm": {"type": "number"},
-        "arm_length_px": {"type": "number"},
-        "arm_length_cm": {"type": "number"},
-            "leg_length_px": {"type": "number"},
-            "leg_length_cm": {"type": "number"},
+    "arm_length_px": {"type": "number"},
+    "arm_length_cm": {"type": "number"},
+    "leg_length_px": {"type": "number"},
+    "leg_length_cm": {"type": "number"},
+    "torso_length_px": {"type": "number"},
+    "torso_length_cm": {"type": "number"},
         "baseline_angles": {
           "type": "object",
           "properties": {

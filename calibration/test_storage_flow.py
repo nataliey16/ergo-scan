@@ -59,4 +59,21 @@ try:
 except Exception as e:
     print(f"Error while verifying leg length fields: {e}")
 
+# Extra check: ensure torso length measurements were stored and loaded
+try:
+    orig_torso_px = mock_data["measurements"].get("torso_length_px")
+    orig_torso_cm = mock_data["measurements"].get("torso_length_cm")
+    loaded_torso_px = loaded_data["measurements"].get("torso_length_px")
+    loaded_torso_cm = loaded_data["measurements"].get("torso_length_cm")
+
+    if orig_torso_px is not None and orig_torso_cm is not None:
+        if orig_torso_px == loaded_torso_px and orig_torso_cm == loaded_torso_cm:
+            print("✅ Torso length measurements saved and loaded correctly.")
+        else:
+            print("⚠️ Torso length values differ between saved and loaded data.")
+    else:
+        print("⚠️ Original mock data did not contain torso length measurements to check.")
+except Exception as e:
+    print(f"Error while verifying torso length fields: {e}")
+
 print("\n🎉 Full test completed successfully!")

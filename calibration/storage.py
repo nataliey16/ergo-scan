@@ -148,6 +148,8 @@ def validate_calibration_data(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
                 "arm_length_cm",
                 "leg_length_px",
                 "leg_length_cm",
+                "torso_length_px",
+                "torso_length_cm",
             ]
             for f in numeric_fields:
                 if f in meas and not isinstance(meas[f], (int, float)):
