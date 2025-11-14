@@ -129,8 +129,40 @@ def validate_calibration_data(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         if not isinstance(raw, dict):
             errors.append("raw_landmarks must be an object/dict")
         else:
-            if "landmarks" in raw and not isinstance(raw["landmarks"], list):
+            lm = raw.get("landmarks")
+            if lm is None:
+                errors.append("raw_landmarks.landmarks is required")
+            elif not isinstance(lm, list):
                 errors.append("raw_landmarks.landmarks must be a list (per-joint dicts)")
+            else:
+                # Validate each landmark entry (required keys/types) and check for duplicate names
+                seen_names = set()
+                for i, item in enumerate(lm):
+                    if not isinstance(item, dict):
+                        errors.append(f"raw_landmarks.landmarks[{i}] must be an object")
+                        continue
+                    # required fields per item
+                    for key in ("name", "x", "y", "z", "visibility"):
+                        if key not in item:
+                            errors.append(f"raw_landmarks.landmarks[{i}] missing '{key}'")
+                    # types & ranges
+                    if "name" in item and not isinstance(item["name"], str):
+                        errors.append(f"raw_landmarks.landmarks[{i}].name must be a string")
+                    if "name" in item:
+                        if item["name"] in seen_names:
+                            errors.append(f"duplicate landmark name: {item['name']}")
+                        else:
+                            seen_names.add(item["name"])
+                    for coord in ("x", "y", "z"):
+                        if coord in item and not isinstance(item[coord], (int, float)):
+                            errors.append(f"raw_landmarks.landmarks[{i}].{coord} must be a number")
+                    if "visibility" in item:
+                        if not isinstance(item["visibility"], (int, float)):
+                            errors.append(f"raw_landmarks.landmarks[{i}].visibility must be a number")
+                        else:
+                            v = item["visibility"]
+                            if not (0.0 <= v <= 1.0):
+                                errors.append(f"raw_landmarks.landmarks[{i}].visibility must be between 0 and 1")
 
     # measurements must be a dict
     meas = data.get("measurements")
