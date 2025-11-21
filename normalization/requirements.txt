@@ -1,0 +1,33 @@
+# ErgoScan Normalization Module - Requirements
+# Version 2.0.0 - 3D Enhanced
+
+# Core Dependencies (Required)
+numpy>=1.21.0          # Scientific computing, array operations
+scipy>=1.9.0           # Statistical functions, outlier detection
+
+# Optional Dependencies
+# MediaPipe Integration (Recommended for 3D pose processing)
+# mediapipe>=0.10.0    # Uncomment for MediaPipe pose detection
+# opencv-python>=4.8.0 # Uncomment if using MediaPipe or camera integration
+
+# GUI Support (If using scan processor)  
+# Pillow>=9.5.0        # Image processing support
+
+# Development and Testing
+# pytest>=7.0.0        # Unit testing framework
+# matplotlib>=3.5.0    # Visualization and debugging
+
+# Advanced Features (Optional)
+# pandas>=1.5.0        # Data analysis and processing
+# scikit-learn>=1.3.0  # Machine learning algorithms
+
+# Installation Notes:
+# 1. Core module only needs numpy and scipy
+# 2. MediaPipe integration requires mediapipe and opencv-python
+# 3. GUI features require Pillow and tkinter (usually included with Python)
+# 4. Development requires pytest and matplotlib
+
+# Quick install commands:
+# Minimal: pip install numpy scipy
+# MediaPipe: pip install numpy scipy mediapipe opencv-python
+# Full dev: pip install numpy scipy mediapipe opencv-python pytest matplotlib
