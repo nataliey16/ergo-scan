@@ -1,19 +1,28 @@
 """
 Posture angle calculations for side-view ergonomic analysis.
-Requires normalized or pixel landmarks stored in dict form.
+Requires pixel-space landmarks stored as dict mapping name -> (x, y, z) tuples.
 
-All formulas are side-view optimized, meaning:
+All formulas are side-view optimized for:
 - Forward head posture (CVA)
 - Chin-to-chest angle
 - Torso lean
 - Upper back angle
-can all be computed accurately.
 """
 
+from typing import Dict, Optional, Tuple
 from .utils_geometry import vector, angle_between
 
+Coord3D = Tuple[float, float, float]
 
-def compute_forward_head_angle(landmarks):
+
+def _get_2d(landmark: Optional[Coord3D]) -> Optional[Tuple[float, float]]:
+    """Extract 2D (x, y) from 3D coordinate."""
+    if not landmark or len(landmark) < 2:
+        return None
+    return (landmark[0], landmark[1])
+
+
+def compute_forward_head_angle(landmarks: Dict[str, Coord3D]) -> Optional[float]:
     """Compute Forward Head Posture (Craniovertebral Angle).
 
     Angle between:
@@ -26,21 +35,21 @@ def compute_forward_head_angle(landmarks):
     Returns:
         CVA angle in degrees. Lower angle = worse forward head posture.
     """
-    ear = landmarks.get("RIGHT_EAR")
-    shoulder = landmarks.get("RIGHT_SHOULDER")
+    ear = _get_2d(landmarks.get("right_ear") or landmarks.get("RIGHT_EAR"))
+    shoulder = _get_2d(landmarks.get("right_shoulder") or landmarks.get("RIGHT_SHOULDER"))
     if not ear or not shoulder:
         return None
 
-    v_sh_ear = vector(shoulder[:2], ear[:2])
+    v_sh_ear = vector(shoulder, ear)
     vertical = (0, -1)
     return angle_between(v_sh_ear, vertical)
 
 
-def compute_chin_to_chest_angle(landmarks):
+def compute_chin_to_chest_angle(landmarks: Dict[str, Coord3D]) -> Optional[float]:
     """Compute chin-to-chest angle (neck flexion).
 
     Angle between:
-      - Chin → Chest vector
+      - Nose → Shoulder vector (as chin proxy)
       - Horizontal axis (1, 0)
 
     Args:
@@ -49,17 +58,17 @@ def compute_chin_to_chest_angle(landmarks):
     Returns:
         Angle in degrees. Higher values = more chin-down movement.
     """
-    chin = landmarks.get("NOSE") or landmarks.get("MOUTH_RIGHT")
-    shoulder = landmarks.get("RIGHT_SHOULDER")
+    chin = _get_2d(landmarks.get("nose") or landmarks.get("NOSE"))
+    shoulder = _get_2d(landmarks.get("right_shoulder") or landmarks.get("RIGHT_SHOULDER"))
     if not chin or not shoulder:
         return None
 
-    v = vector(chin[:2], shoulder[:2])
+    v = vector(chin, shoulder)
     horizontal = (1, 0)
     return angle_between(v, horizontal)
 
 
-def compute_torso_lean_angle(landmarks):
+def compute_torso_lean_angle(landmarks: Dict[str, Coord3D]) -> Optional[float]:
     """Compute torso lean relative to vertical axis.
 
     Shoulder → Hip vector compared against (0, -1).
@@ -70,21 +79,21 @@ def compute_torso_lean_angle(landmarks):
     Returns:
         Angle in degrees. Higher = leaning more forward/backward.
     """
-    shoulder = landmarks.get("RIGHT_SHOULDER")
-    hip = landmarks.get("RIGHT_HIP")
+    shoulder = _get_2d(landmarks.get("right_shoulder") or landmarks.get("RIGHT_SHOULDER"))
+    hip = _get_2d(landmarks.get("right_hip") or landmarks.get("RIGHT_HIP"))
     if not shoulder or not hip:
         return None
 
-    v_torso = vector(shoulder[:2], hip[:2])
+    v_torso = vector(shoulder, hip)
     vertical = (0, -1)
     return angle_between(v_torso, vertical)
 
 
-def compute_upper_back_angle(landmarks):
+def compute_upper_back_angle(landmarks: Dict[str, Coord3D]) -> Optional[float]:
     """Compute upper back rounding (thoracic kyphosis).
 
     Angle between:
-      - Shoulder → Chest vector
+      - Shoulder → Hip vector (proxy for back curvature)
       - Vertical axis
 
     Args:
@@ -93,13 +102,12 @@ def compute_upper_back_angle(landmarks):
     Returns:
         Angle in degrees. Higher = more rounding.
     """
-    shoulder = landmarks.get("RIGHT_SHOULDER")
-    chest = landmarks.get("RIGHT_SHOULDER")  # Mediapipe doesn't provide chest landmark, use shoulder as proxy
-    hip = landmarks.get("RIGHT_HIP")
+    shoulder = _get_2d(landmarks.get("right_shoulder") or landmarks.get("RIGHT_SHOULDER"))
+    hip = _get_2d(landmarks.get("right_hip") or landmarks.get("RIGHT_HIP"))
 
     if not shoulder or not hip:
         return None
 
-    v_back = vector(shoulder[:2], hip[:2])
+    v_back = vector(shoulder, hip)
     vertical = (0, -1)
     return angle_between(v_back, vertical)
