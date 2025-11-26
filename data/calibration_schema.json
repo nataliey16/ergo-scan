@@ -1,104 +1,78 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "CalibrationData",
   "type": "object",
-  "required": ["version", "pose_type", "timestamp", "raw_landmarks", "measurements"],
+  "required": ["pixel_metadata", "lengths", "angles", "confidence"],
   "properties": {
-    "version": {"type": "string"},
-    "user_id": {"type": ["string", "null"]},
-    "pose_type": {"type": "string", "enum": ["t_pose", "standing", "seated"]},
-    "timestamp": {"type": "string", "format": "date-time"},
-    "raw_landmarks": {
+    "pixel_metadata": {
       "type": "object",
-      "required": ["frame_count", "landmarks"],
+      "description": "Information needed to convert pixel measurements to real-world CM.",
       "properties": {
-        "frame_count": {"type": "integer", "minimum": 1},
-        "landmarks": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["name", "x", "y", "z", "visibility"],
-            "properties": {
-              "name": {"type": "string"},
-              "x": {"type": "number"},
-              "y": {"type": "number"},
-              "z": {"type": "number"},
-              "visibility": {"type": "number", "minimum": 0, "maximum": 1}
-            }
-          }
-        }
+        "pixel_height": { "type": "number" },
+        "scale_factor_cm_per_pixel": { "type": "number" },
+        "image_width": { "type": "number" },
+        "image_height": { "type": "number" }
+      },
+      "required": ["pixel_height", "scale_factor_cm_per_pixel"]
+    },
+
+    "lengths": {
+      "type": "object",
+      "description": "Body segment lengths measured from pixel landmarks, and converted into CM.",
+      "properties": {
+        "shoulder_width_px": { "type": "number" },
+        "shoulder_width_cm": { "type": "number" },
+
+        "upper_arm_length_px": { "type": "number" },
+        "upper_arm_length_cm": { "type": "number" },
+
+        "forearm_length_px": { "type": "number" },
+        "forearm_length_cm": { "type": "number" },
+
+        "torso_length_px": { "type": "number" },
+        "torso_length_cm": { "type": "number" },
+
+        "neck_length_px": { "type": "number" },
+        "neck_length_cm": { "type": "number" }
       }
     },
-    "measurements": {
+
+    "angles": {
       "type": "object",
-      "required": ["pixel_height", "scale_factor_cm_per_pixel"],
+      "description": "Posture angles derived from normalized → pixel landmarks.",
       "properties": {
-        "pixel_height": {"type": "number"},
-        "scale_factor_cm_per_pixel": {"type": "number"},
-
-        "shoulder_width_px": {"type": "number"},
-        "shoulder_width_cm": {"type": "number"},
-
-        "hip_width_px": {"type": "number"},
-        "hip_width_cm": {"type": "number"},
-
-        "arm_length_px": {"type": "number"},
-        "arm_length_cm": {"type": "number"},
-
-        "upper_arm_length_px": {"type": "number"},
-        "upper_arm_length_cm": {"type": "number"},
-
-        "forearm_length_px": {"type": "number"},
-        "forearm_length_cm": {"type": "number"},
-
-        "leg_length_px": {"type": "number"},
-        "leg_length_cm": {"type": "number"},
-
-        "torso_length_px": {"type": "number"},
-        "torso_length_cm": {"type": "number"},
-
-        "spine_length_px": {"type": "number"},
-        "spine_length_cm": {"type": "number"},
-
-        "head_height_px": {"type": "number"},
-        "head_height_cm": {"type": "number"},
-        
-        "baseline_angles": {
-          "type": "object",
-          "properties": {
-            "neck_deg": {"type": "number"},
-            "spine_deg": {"type": "number"}
-          }
-        }
+        "forward_head_angle_deg": { "type": "number" },
+        "neck_flexion_deg": { "type": "number" },
+        "torso_lean_deg": { "type": "number" },
+        "shoulder_angle_deg": { "type": "number" },
+        "elbow_angle_deg": { "type": "number" }
       }
     },
-    "normalized": {
+
+    "confidence": {
       "type": "object",
+      "description": "Visibility confidence scores (0–1) aggregated from MediaPipe landmark visibilities.",
       "properties": {
-        "landmarks_normalized": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": {"type": "string"},
-              "x": {"type": "number"},
-              "y": {"type": "number"},
-              "z": {"type": "number"}
-            }
-          }
-        }
+        "head_confidence": { "type": "number" },
+        "shoulder_confidence": { "type": "number" },
+        "torso_confidence": { "type": "number" },
+        "arm_confidence": { "type": "number" }
       }
     },
-    "camera_meta": {
+
+    "debug": {
       "type": "object",
+      "description": "Optional debug outputs for visualization or QA.",
       "properties": {
-        "resolution": {
+        "used_landmarks": {
           "type": "array",
-          "items": {"type": "integer"},
-          "minItems": 2,
-          "maxItems": 2
+          "items": { "type": "string" }
         },
-        "camera_distance_estimate_cm": {"type": "number"}
+        "raw_landmark_positions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "number" }
+          }
+        }
       }
     }
   }
