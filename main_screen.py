@@ -1,9 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import cv2
+import subprocess
+import sys
+import os
 from PIL import Image, ImageTk
 from calibration import BodyCalibrationInstructions
 from ergoscan_settings import ErgoScanSettings
+
 
 
 class MainScreen:
@@ -568,12 +572,32 @@ class MainScreen:
         # Re-enable the calibration button
         self.calibration_button.config(state="normal")
         
+    # def start_scanning(self):
+    #     """Handle start scanning button click"""
+    #     print("Navigating to camera page...")
+    #     # TODO: Implement navigation to camera page
+    #     # This could involve opening a new window or switching frames
+    #     tk.messagebox.showinfo("Start Scanning", "Scanning Started")
+
     def start_scanning(self):
-        """Handle start scanning button click"""
-        print("Navigating to camera page...")
-        # TODO: Implement navigation to camera page
-        # This could involve opening a new window or switching frames
-        tk.messagebox.showinfo("Start Scanning", "Scanning Started")
+ 
+        print("Launching posture detection...")
+
+        # Check if calibration exists
+        if not os.path.exists("calibration_data.json"):
+            tk.messagebox.showwarning(
+                "Calibration Required",
+                "Please complete calibration before starting posture scanning."
+            )
+            return
+
+        # Launch posture_detection.py
+        try:
+            subprocess.Popen([sys.executable, "posture_detection.py"])
+            print("Posture detection script started.")
+        except Exception as e:
+            tk.messagebox.showerror("Error", f"Unable to start scanning:\n{e}")
+    
 
     def show_settings(self):
         """Handle settings icon click"""
