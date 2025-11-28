@@ -74,7 +74,8 @@ class CalibrationConfig:
     
     # File settings
     OUTPUT_FILE = "calibration_data.json"
-    NORMALIZED_OUTPUT_FILE = "normalized_calibration_data.json"
+    # Note: Normalized data is now saved directly into calibration_data.json under "normalized" key
+    # NORMALIZED_OUTPUT_FILE is deprecated and no longer used
     
     # UI settings
     WINDOW_SIZE = "800x700"
@@ -166,16 +167,16 @@ class NormalizationIntegrator:
                         "landmark_names": landmark_names
                     }
                     
-                    # Prepare normalized output for saving
+                    # Prepare normalized output for saving (only normalized data, no original)
                     normalized_output[pose_name] = {
-                        "landmarks": [
-                            {
-                                "name": landmark_names[i] if i < len(landmark_names) else f"landmark_{i}",
-                                "original": {"x": landmarks[i][0], "y": landmarks[i][1], "z": landmarks[i][2]},
-                                "normalized": {"x": normalized[i][0], "y": normalized[i][1], "z": normalized[i][2]}
+                        "landmarks": {
+                            landmark_names[i] if i < len(landmark_names) else f"landmark_{i}": {
+                                "x": normalized[i][0],
+                                "y": normalized[i][1],
+                                "z": normalized[i][2]
                             }
                             for i in range(len(normalized))
-                        ],
+                        },
                         "statistics": self._calculate_statistics(normalized)
                     }
                 else:
@@ -272,11 +273,15 @@ class NormalizationIntegrator:
         }
     
     def _save_normalized_data(self, normalized_output: Dict[str, Any]):
-        """Save normalized data to file."""
+        """Save only normalized data to calibration_data.json (replaces original format)."""
         try:
-            with open(CalibrationConfig.NORMALIZED_OUTPUT_FILE, 'w') as f:
-                json.dump(normalized_output, f, indent=2)
-            print(f"\n💾 Normalized data saved to '{CalibrationConfig.NORMALIZED_OUTPUT_FILE}'")
+            calibration_file = CalibrationConfig.OUTPUT_FILE
+            
+            # Save only the normalized data structure
+            with open(calibration_file, 'w') as f:
+                json.dump(normalized_output, f, indent=4)
+            
+            print(f"\n💾 Normalized data saved to '{calibration_file}'")
         except Exception as e:
             print(f"⚠️  Warning: Could not save normalized data: {e}")
     

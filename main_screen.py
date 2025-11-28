@@ -20,6 +20,7 @@ class MainScreen:
         self.webcam_active = False
         self.start_button = tk.Button(self.root, text="Start", state="disabled")
         self.calibrated = False  #state variable to track if calibration has been done or not
+        self.selected_camera_index = 0  # Default to first camera
         
         # Initialize profile data for name display
         self.profile_name = "John Doe"
@@ -282,19 +283,35 @@ class MainScreen:
         self.right_frame.grid_rowconfigure(1, weight=1)
         self.right_frame.grid_columnconfigure(0, weight=1)
         
-        # Title for right section
+        # Title and camera selection frame
+        title_frame = tk.Frame(self.right_frame, bg="#ffffff")
+        title_frame.grid(row=0, column=0, pady=(10, 5), sticky="n")
+        
         title_label = tk.Label( #Defines the title label details
-            self.right_frame, 
+            title_frame, 
             text="Webcam Preview", 
             font=("Arial", 16, "bold"), 
             bg="#ffffff"
         )
-        title_label.grid( #Defines the grid placement of the title label
-            row=0, 
-            column=0, 
-            pady=(10, 5), 
-            sticky="n"
+        title_label.pack(side="left", padx=(0, 20))
+        
+        # Camera selection dropdown
+        camera_frame = tk.Frame(title_frame, bg="#ffffff")
+        camera_frame.pack(side="left")
+        
+        tk.Label(camera_frame, text="Camera:", font=("Arial", 10), bg="#ffffff").pack(side="left", padx=(0, 5))
+        
+        self.camera_var = tk.StringVar(value="Camera 0")
+        self.camera_dropdown = ttk.Combobox(
+            camera_frame,
+            textvariable=self.camera_var,
+            values=self.detect_cameras(),
+            state="readonly",
+            width=12,
+            font=("Arial", 10)
         )
+        self.camera_dropdown.pack(side="left")
+        self.camera_dropdown.bind("<<ComboboxSelected>>", self.on_camera_selection_change)
         
         # --- Webcam Preview Display Area ---
         # Webcam frame details
@@ -405,17 +422,62 @@ class MainScreen:
             self.stop_webcam()
 
 
+    # --- Camera Detection and Selection Functions ---
+    def detect_cameras(self):
+        """Detect available cameras and return list of camera options"""
+        available_cameras = []
+        for i in range(10):  # Check first 10 camera indices
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                available_cameras.append(f"Camera {i}")
+                cap.release()
+            else:
+                break  # Stop when no more cameras found
+        
+        if not available_cameras:
+            available_cameras = ["Camera 0"]  # Default fallback
+        
+        return available_cameras
+    
+    def on_camera_selection_change(self, event=None):
+        """Handle camera selection change"""
+        selected = self.camera_var.get()
+        # Extract camera index from "Camera X" string
+        try:
+            camera_index = int(selected.split()[-1])
+            self.selected_camera_index = camera_index
+            print(f"Camera selection changed to: {selected} (index {camera_index})")
+            
+            # If camera is currently active, restart with new selection
+            if self.webcam_active:
+                print("Restarting camera with new selection...")
+                self.stop_webcam()
+                self.start_webcam_preview()
+                # Update toggle switch to ON state
+                if hasattr(self, 'toggle_camera_switch'):
+                    self.toggle_camera_switch.state = True
+                    self.toggle_camera_switch.canvas.itemconfig(
+                        self.toggle_camera_switch.bg_rect, fill="#50ff36"
+                    )
+        except (ValueError, IndexError):
+            print(f"Error parsing camera selection: {selected}")
+    
     # --- Webcam Functions ---
     def start_webcam_preview(self):
         try:
-            self.cap = cv2.VideoCapture(0)
+            self.cap = cv2.VideoCapture(self.selected_camera_index)
             if self.cap.isOpened():
                 self.webcam_active = True
+                print(f"Camera {self.selected_camera_index} opened successfully")
                 self.update_webcam()
             else:
-                self.webcam_label.config(text="Camera not available", fg="red")
+                error_msg = f"Camera {self.selected_camera_index} not available"
+                self.webcam_label.config(text=error_msg, fg="red")
+                print(error_msg)
         except Exception as e:
-            self.webcam_label.config(text=f"Camera error: {str(e)}", fg="red")
+            error_msg = f"Camera error: {str(e)}"
+            self.webcam_label.config(text=error_msg, fg="red")
+            print(error_msg)
             
     def update_webcam(self):
         if self.webcam_active and self.cap and self.cap.isOpened():
